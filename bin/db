@@ -17,7 +17,7 @@ if (!isset($loader)) {
     die(1);
 }
 
-$app = new Application("db-tools", 'master');
+$app = new Application("db-tools", '@git-commit@');
 $app->add(new \winwin\db\tools\commands\DumpCommand());
 $app->add(new \winwin\db\tools\commands\LoadCommand());
 $app->add(new \winwin\db\tools\commands\SchemaCommand());
