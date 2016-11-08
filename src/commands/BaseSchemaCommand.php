@@ -23,9 +23,11 @@ abstract class BaseSchemaCommand extends BaseCommand
         }, $sqls)) . ";\n";
     }
 
-    protected function createSchema(InputInterface $input, $source)
+    protected function createSchema(InputInterface $input, $source, $tables = null)
     {
-        $tables = $input->getArgument('tables');
+        if ($tables === null) {
+            $tables = $input->getArgument('tables');
+        }
         if (isset($source)) {
             $data = DataDumper::loadFile($source);
             if (!is_array($data)) {

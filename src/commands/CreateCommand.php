@@ -32,17 +32,10 @@ class CreateCommand extends BaseCommand
             $prefix = $input->getOption('env-prefix');
             $dsn = $this->getEnv($prefix.'DB_ROOT_DSN');
             if (empty($dsn)) {
-                $dsn = [];
-                $dsn['driver'] = strtolower($this->getEnv($prefix.'DB_DRIVER', 'mysql'));
+                $dsn = $this->getDsnFromEnv($prefix);
                 $dsn['username'] = 'root';
                 $dsn['password'] = $this->getEnv('MYSQL_ENV_MYSQL_ROOT_PASSWORD', $this->getEnv($prefix.'DB_ROOT_PASS', ''));
-                
-                if ($dsn['driver'] === 'mysql') {
-                    $dsn['host'] = $this->getEnv('MYSQL_PORT_3306_TCP_ADDR', $this->getEnv($prefix.'DB_HOST', 'localhost'));
-                    $dsn['port'] = $this->getEnv('MYSQL_PORT_3306_TCP_PORT', $this->getEnv($prefix.'DB_PORT', 3306));
-                    $dsn['charset'] = $this->getEnv($prefix.'DB_CHARSET');
-                    $dsn['unix_socket'] = $this->getEnv($prefix.'DB_SOCKET');
-                }
+                unset($dsn['dbname']);
             }
         }
         return Db::getConnection($dsn);

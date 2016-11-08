@@ -37,7 +37,7 @@ class SyncCommand extends BaseSchemaCommand
                 return $table->getName();
             }, $toSchema->getTables());
         }
-        $currentSchema = $this->createSchema($input, null);
+        $currentSchema = $this->createSchema($input, null, $tables);
         $comparator = new Comparator();
         $diff = $comparator->compare($currentSchema, $toSchema);
         $sqls = Schema::toSql($diff, $db = $this->getConnection($input));

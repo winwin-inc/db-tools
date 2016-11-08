@@ -27,6 +27,10 @@ use PDO;
  */
 abstract class BaseCommand extends Command
 {
+    const DEFAULT_HOST = '127.0.0.1';
+    const DEFAULT_PORT = 3306;
+    const DEFAULT_CHARSET = 'utf8';
+    
     /**
      * @var \Doctrine\DBAL\Driver\Connection
      */
@@ -67,7 +71,7 @@ abstract class BaseCommand extends Command
         }
         if ($envFile) {
             if (is_file($envFile)) {
-                (new Dotenv(dirname($envFile)))->load();
+                (new Dotenv(dirname($envFile), basename($envFile)))->load();
             } elseif (is_dir($envFile)) {
                 (new Dotenv($envFile))->load();
             } else {
@@ -75,6 +79,22 @@ abstract class BaseCommand extends Command
             }
         }
         $this->envLoaded = true;
+    }
+
+    protected function getDsnFromEnv($prefix)
+    {
+        $dsn = [];
+        $dsn['driver'] = strtolower($this->getEnv($prefix.'DB_DRIVER', 'mysql'));
+        $dsn['username'] = $this->getEnv($prefix.'DB_USER');
+        $dsn['password'] = $this->getEnv($prefix.'DB_PASS');
+        $dsn['dbname'] = $this->getEnv($prefix.'DB_NAME');
+        if ($dsn['driver'] === 'mysql') {
+            $dsn['host'] = $this->getEnv('MYSQL_PORT_3306_TCP_ADDR', $this->getEnv($prefix.'DB_HOST', self::DEFAULT_HOST));
+            $dsn['port'] = $this->getEnv('MYSQL_PORT_3306_TCP_PORT', $this->getEnv($prefix.'DB_PORT', self::DEFAULT_PORT));
+            $dsn['charset'] = $this->getEnv($prefix.'DB_CHARSET', self::DEFAULT_CHARSET);
+            $dsn['unix_socket'] = $this->getEnv($prefix.'DB_SOCKET');
+        }
+        return $dsn;
     }
     
     protected function getConnection(InputInterface $input)
@@ -88,17 +108,7 @@ abstract class BaseCommand extends Command
             $prefix = $input->getOption('env-prefix');
             $dsn = $this->getEnv($prefix.'DB_DSN');
             if (empty($dsn)) {
-                $dsn = [];
-                $dsn['driver'] = strtolower($this->getEnv($prefix.'DB_DRIVER', 'mysql'));
-                $dsn['username'] = $this->getEnv($prefix.'DB_USER');
-                $dsn['password'] = $this->getEnv($prefix.'DB_PASS');
-                $dsn['dbname'] = $this->getEnv($prefix.'DB_NAME');
-                if ($dsn['driver'] === 'mysql') {
-                    $dsn['host'] = $this->getEnv('MYSQL_PORT_3306_TCP_ADDR', $this->getEnv($prefix.'DB_HOST', '127.0.0.1'));
-                    $dsn['port'] = $this->getEnv('MYSQL_PORT_3306_TCP_PORT', $this->getEnv($prefix.'DB_PORT', 3306));
-                    $dsn['charset'] = $this->getEnv($prefix.'DB_CHARSET');
-                    $dsn['unix_socket'] = $this->getEnv($prefix.'DB_SOCKET');
-                }
+                $dsn = $this->getDsnFromEnv($prefix);
             }
         }
         return $this->connection = Db::getConnection($dsn);
