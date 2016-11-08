@@ -1,0 +1,13 @@
+{
+    "finder": [
+        {
+            "name": ["*.php", "*.json"],
+            "exclude": ["phpunit", "Tests", "test", "tests", "phpspec"],
+            "in": "."
+        }
+    ],
+    "main": "bin/db",
+    "output": "db.phar",
+    "chmod": "0755",
+    "stub": true
+}

@@ -1,0 +1,27 @@
+#!/usr/bin/env php
+<?php
+use Symfony\Component\Console\Application;
+
+foreach ([__DIR__.'/../../autoload.php', __DIR__.'/../vendor/autoload.php'] as $file) {
+    if (file_exists($file)) {
+        $loader = require($file);
+    }
+}
+if (!isset($loader)) {
+    fwrite(STDERR,
+        'You need to set up the project dependencies using the following commands:' . PHP_EOL .
+        'wget http://getcomposer.org/composer.phar' . PHP_EOL .
+        'php composer.phar install' . PHP_EOL
+    );
+
+    die(1);
+}
+
+$app = new Application("db-tools", 'master');
+$app->add(new \winwin\db\tools\commands\DumpCommand());
+$app->add(new \winwin\db\tools\commands\LoadCommand());
+$app->add(new \winwin\db\tools\commands\SchemaCommand());
+$app->add(new \winwin\db\tools\commands\DiffCommand());
+$app->add(new \winwin\db\tools\commands\SyncCommand());
+$app->add(new \winwin\db\tools\commands\CreateCommand());
+$app->run();

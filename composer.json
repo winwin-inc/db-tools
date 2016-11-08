@@ -1,0 +1,35 @@
+{
+    "name": "winwin/db-tools",
+    "type": "library",
+    "description": "Database tools for schema and data management",
+    "keywords": [],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ye Wenbin",
+            "email": "yewenbin@winwin-inc.com"
+        }
+    ],
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "doctrine/dbal": "^2.5",
+        "jdorn/sql-formatter": "^1.2",
+        "symfony/console": "^3.0",
+        "kuiper/helper": "^0.1"
+    },
+    "require-dev": {
+        "kuiper/test-helper": "^0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "winwin\\db\\tools\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "winwin\\db\\tools\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
