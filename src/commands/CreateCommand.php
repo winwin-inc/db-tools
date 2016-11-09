@@ -54,10 +54,11 @@ class CreateCommand extends BaseCommand
             parse_str(Arrays::fetch($url, 'query'), $query);
             $charset = Arrays::fetch($query, 'charset');
         } else {
-            $dbname = $this->getEnv($prefix.'DB_NAME');
-            $username = $this->getEnv($prefix.'DB_USER');
-            $password = $this->getEnv($prefix.'DB_PASS');
-            $charset = $this->getEnv($prefix.'DB_CHARSET');
+            $dsn = $this->getDsnFromEnv($prefix);
+            $dbname = $dsn['dbname'];
+            $username = $dsn['username'];
+            $password = $dsn['password'];
+            $charset = $dsn['charset'];
         }
         if (in_array($dbname, $db->getSchemaManager()->listDatabases())) {
             $output->writeln("<info>Database $dbname already exists</>");

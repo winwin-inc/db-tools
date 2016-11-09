@@ -21,7 +21,7 @@ $app = new Application("db-tools", '@git-version@');
 $app->getHelperSet()->set(new \Deployer\Component\PharUpdate\Console\Helper());
 $selfUpdate = new \Deployer\Component\PharUpdate\Console\Command('self-update');
 $selfUpdate->setDescription("Updates db.phar to the latest version.")
-    ->setManifestUri("http://mirrors.winwin.group/db-tools/manifest.json");
+    ->setManifestUri("http://mirrors.winwin.group/db/manifest.json");
 $app->add($selfUpdate);
 
 $app->add(new \winwin\db\tools\commands\DumpCommand());

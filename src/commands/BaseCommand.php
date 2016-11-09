@@ -18,9 +18,11 @@ use PDO;
  *  - DB_DSN
  *  - DB_ROOT_DSN
  *  - DB_ROOT_PASS
- *  - DB_PASS
- *  - DB_NAME
+ *  - DB_PASS | DB_PASSWORD
+ *  - DB_NAME | DB_DATABASE
+ *  - DB_USER | DB_USERNAME
  *  - DB_HOST
+ *  - DB_PORT
  *  - MYSQL_PORT_3306_TCP_ADDR
  *  - MYSQL_PORT_3306_TCP_PORT
  *  - MYSQL_ENV_MYSQL_ROOT_PASSWORD
@@ -85,9 +87,9 @@ abstract class BaseCommand extends Command
     {
         $dsn = [];
         $dsn['driver'] = strtolower($this->getEnv($prefix.'DB_DRIVER', 'mysql'));
-        $dsn['username'] = $this->getEnv($prefix.'DB_USER');
-        $dsn['password'] = $this->getEnv($prefix.'DB_PASS');
-        $dsn['dbname'] = $this->getEnv($prefix.'DB_NAME');
+        $dsn['username'] = $this->getEnv($prefix.'DB_USER', $this->getEnv($prefix.'DB_USERNAME'));
+        $dsn['password'] = $this->getEnv($prefix.'DB_PASS', $this->getEnv($prefix.'DB_PASSWORD'));
+        $dsn['dbname'] = $this->getEnv($prefix.'DB_NAME', $this->getEnv($prefix.'DB_DATABASE'));
         if ($dsn['driver'] === 'mysql') {
             $dsn['host'] = $this->getEnv('MYSQL_PORT_3306_TCP_ADDR', $this->getEnv($prefix.'DB_HOST', self::DEFAULT_HOST));
             $dsn['port'] = $this->getEnv('MYSQL_PORT_3306_TCP_PORT', $this->getEnv($prefix.'DB_PORT', self::DEFAULT_PORT));
