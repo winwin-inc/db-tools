@@ -77,7 +77,7 @@ abstract class BaseCommand extends Command
             } elseif (is_dir($envFile)) {
                 (new Dotenv($envFile))->load();
             } else {
-                throw new RuntimeException("");
+                throw new \RuntimeException("Cannot load env: file $envFile does not exist");
             }
         }
         $this->envLoaded = true;

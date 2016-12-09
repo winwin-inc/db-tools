@@ -19,7 +19,7 @@ class SyncCommand extends BaseSchemaCommand
         parent::configure();
         $this->setName('sync')
             ->setDescription("Update database schema")
-            ->addOption('purge', null, InputOption::VALUE_OPTIONAL, "Remove not present tables")
+            ->addOption('purge', null, InputOption::VALUE_NONE, "Remove not present tables")
             ->addOption('target', '-t', InputOption::VALUE_REQUIRED, "Database schema diff to");
     }
 

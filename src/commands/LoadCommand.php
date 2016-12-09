@@ -10,9 +10,6 @@ use RuntimeException;
 use InvalidArgumentException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
-/**
- * @Command("db:load", desc="Load data to database table")
- */
 class LoadCommand extends BaseCommand
 {
     protected function configure()
@@ -21,7 +18,7 @@ class LoadCommand extends BaseCommand
         $this->setName("load")
             ->setDescription("Load data to database table")
             ->addOption('--format', '-f', InputOption::VALUE_REQUIRED, "Input data format, support json|yaml|php")
-            ->addOption('--truncate', '-t', InputOption::VALUE_OPTIONAL, "Truncate table before load data")
+            ->addOption('--truncate', '-t', InputOption::VALUE_NONE, "Truncate table before load data")
             ->addArgument('file', InputArgument::OPTIONAL, "Data input file, default read from stdin");
     }
  
@@ -35,8 +32,6 @@ class LoadCommand extends BaseCommand
             if (empty($format)) {
                 $format = 'yaml';
             }
-        } elseif (empty($format)) {
-            $format = pathinfo($file, PATHINFO_EXTENSION);
         }
         $dataset = DataDumper::loadFile($file, $format);
         $db = $this->getConnection($input);

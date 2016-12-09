@@ -9,9 +9,6 @@ use winwin\db\tools\schema\Schema;
 use kuiper\helper\DataDumper;
 use SqlFormatter;
 
-/**
- * @Command("db:schema", desc="Exports database table schema")
- */
 class SchemaCommand extends BaseSchemaCommand
 {
     protected function configure()
