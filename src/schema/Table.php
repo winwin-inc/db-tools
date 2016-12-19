@@ -197,13 +197,17 @@ class Table
         if (preg_match('/^\(\s*(\d+)\s*\)/', $columnDef, $matches)) {
             $options['length'] = (int) $matches[1];
         }
-        if (($pos = strpos($columnDef, ' {')) !== false) {
-            $options = array_merge($options, json_decode(substr($columnDef, $pos+1), true));
-            $columnDef = substr($columnDef, 0, $pos);
-        }
-        foreach (preg_split('/\s+/', $columnDef) as $name) {
-            if (!empty($name)) {
-                $options[$name] = true;
+        if ($columnDef[0] == '{') {
+            $options = array_merge($options, json_decode($columnDef, true));
+        } else {
+            if (($pos = strpos($columnDef, ' {')) !== false) {
+                $options = array_merge($options, json_decode(substr($columnDef, $pos+1), true));
+                $columnDef = substr($columnDef, 0, $pos);
+            }
+            foreach (preg_split('/\s+/', $columnDef) as $name) {
+                if (!empty($name)) {
+                    $options[$name] = true;
+                }
             }
         }
         foreach (['unsigned', 'fixed', 'notnull', 'autoincrement'] as $key) {

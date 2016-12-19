@@ -30,4 +30,5 @@ $app->add(new \winwin\db\tools\commands\SchemaCommand());
 $app->add(new \winwin\db\tools\commands\DiffCommand());
 $app->add(new \winwin\db\tools\commands\SyncCommand());
 $app->add(new \winwin\db\tools\commands\CreateCommand());
+$app->add(new \winwin\db\tools\commands\GenerateCommand());
 $app->run();
