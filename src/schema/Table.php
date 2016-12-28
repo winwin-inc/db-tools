@@ -197,7 +197,7 @@ class Table
         if (preg_match('/^\(\s*(\d+)\s*\)/', $columnDef, $matches)) {
             $options['length'] = (int) $matches[1];
         }
-        if ($columnDef[0] == '{') {
+        if (!empty($columnDef) && $columnDef[0] == '{') {
             $options = array_merge($options, json_decode($columnDef, true));
         } else {
             if (($pos = strpos($columnDef, ' {')) !== false) {
