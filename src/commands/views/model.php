@@ -1,5 +1,9 @@
 <?= '<?php' ?>
 
+<?php if ($namespace) : ?>
+
+namespace <?= $namespace ?>;
+<?php endif ?>
 
 class <?= $className ?>
 

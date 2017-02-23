@@ -20,13 +20,23 @@ class GenerateCommand extends BaseCommand
         parent::configure();
         $this->setName("generate")
             ->setDescription("Generate model of database table")
+            ->addOption('namespace', null, InputOption::VALUE_REQUIRED, 'model namespace')
+            ->addOption('prefix', '-p', InputOption::VALUE_REQUIRED, 'table prefix')
+            ->addOption('output', '-o', InputOption::VALUE_REQUIRED, 'output file name')
             ->addArgument('table', InputArgument::REQUIRED, "model for the table name");
     }
  
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $table = $input->getArgument('table');
-        $className = Text::camelize($table);
+        $prefix = $input->getOption('prefix');
+        $namespace = $input->getOption('namespace');
+        $outputfile = $input->getOption('output');
+        if (Text::startsWith($table, $prefix)) {
+            $className = Text::camelize(substr($table, strlen($prefix)));
+        } else {
+            $className = Text::camelize($table);
+        }
         $db = $this->getConnection($input);
         $schema = Schema::createSchema($db, [$table]);
         $table = $schema->getTable($table);
@@ -39,7 +49,21 @@ class GenerateCommand extends BaseCommand
                 'methodName' => $camelcase,
             ];
         }
-        include(__DIR__.'/views/model.php');
+        if ($outputfile) {
+            if (is_dir($outputfile) || Text::endsWith($outputfile, '/')) {
+                $outputfile = rtrim($outputfile, '/')."/${className}.php";
+            }
+            $dir = dirname($outputfile);
+            if (!is_dir($dir) && !mkdir($dir, 0777, true)) {
+                throw new \RuntimeException("cannot create directory $dir");
+            }
+            ob_start();
+            include(__DIR__.'/views/model.php');
+            file_put_contents($outputfile, ob_get_clean());
+            $output->writeln("<info>Write to $outputfile</>");
+        } else {
+            include(__DIR__.'/views/model.php');
+        }
     }
 
     private function getType($type)

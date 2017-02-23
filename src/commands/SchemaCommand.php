@@ -27,6 +27,10 @@ class SchemaCommand extends BaseSchemaCommand
         $schema = $this->createSchema($input, $source);
         if ($format == "sql") {
             echo $this->formatSql(Schema::toSql($schema, $this->getConnection($input)));
+        } elseif ($format == 'columns') {
+            echo DataDumper::dump(array_map(function($table) {
+                return array_keys($table['columns']);
+            }, Schema::toArray($schema)), 'json');
         } else {
             echo DataDumper::dump(Schema::toArray($schema), $format);
         }
