@@ -88,6 +88,10 @@ class SchemaEventSubscriber implements EventSubscriber
         }
         $query .= ')';
 
+        if (isset($options['engine'])) {
+            $query .= 'ENGINE=' . strtoupper(trim($options['engine']));
+        }
+
         $sql[] = $query;
 
         if (isset($options['foreignKeys'])) {
