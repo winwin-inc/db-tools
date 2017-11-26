@@ -186,6 +186,7 @@ class Table
 
     private static function parseColumn($columnDef)
     {
+        $original = $columnDef;
         $columnDef = trim($columnDef);
         if (preg_match('/^(\w+)\s*/', $columnDef, $matches)) {
             $type = $matches[1];
@@ -201,7 +202,12 @@ class Table
             $options = array_merge($options, json_decode($columnDef, true));
         } else {
             if (($pos = strpos($columnDef, ' {')) !== false) {
-                $options = array_merge($options, json_decode(substr($columnDef, $pos+1), true));
+                $data = json_decode(substr($columnDef, $pos+1), true);
+                if (JSON_ERROR_NONE !== json_last_error()) {
+                    throw new \InvalidArgumentException(
+                        'json_decode error: ' . json_last_error_msg() . ' when parse ' . $original);
+                }
+                $options = array_merge($options, $data);
                 $columnDef = substr($columnDef, 0, $pos);
             }
             foreach (preg_split('/\s+/', $columnDef) as $name) {
