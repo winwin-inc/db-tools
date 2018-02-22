@@ -40,15 +40,24 @@ class LoadCommand extends BaseCommand
                 if ($truncate) {
                     $db->executeUpdate("truncate `$table`");
                 }
-                foreach ($rows as $row) {
+                $batchSize = 1000;
+                foreach (array_chunk($rows, $batchSize) as $batchRows) {
+                    $row = $batchRows[0];
                     $sql = sprintf(
-                        "INSERT INTO `%s` (`%s`) VALUES(%s)",
+                        "INSERT INTO `%s` (`%s`) VALUES",
                         $table,
-                        implode("`,`", array_keys($row)),
-                        implode(",", array_fill(0, count($row), "?"))
+                        implode("`,`", array_keys($row))
                     );
+                    $sql .= implode(",", array_fill(0, count($batchRows), sprintf('(%s)', implode(",", array_fill(0, count($row), "?")))));
+                    $keys = array_keys($row);
+                    $bindValues = [];
+                    foreach ($batchRows as $row) {
+                        foreach ($keys as $name) {
+                            $bindValues[] = isset($row[$name]) ? $row[$name] : null;
+                        }
+                    }
                     $stmt = $db->prepare($sql);
-                    $stmt->execute(array_values($row));
+                    $stmt->execute($bindValues);
                 }
                 $output->writeln(sprintf("<info>Load %d records to table %s</>", count($rows), $table));
             }
