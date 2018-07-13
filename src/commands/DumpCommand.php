@@ -1,6 +1,8 @@
 <?php
+
 namespace winwin\db\tools\commands;
 
+use Doctrine\DBAL\Connection;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -16,7 +18,8 @@ class DumpCommand extends BaseCommand
         parent::configure();
         $this->setName("dump")
             ->setDescription("Dumps records from database table")
-            ->addOption('--format', '-f', InputOption::VALUE_REQUIRED, "Output format, support json|yaml|php")
+            ->addOption('--format', '-f', InputOption::VALUE_REQUIRED, "Output format, support json|yaml|php|csv")
+            ->addOption('--delimiter', '-d', InputOption::VALUE_REQUIRED, "Csv delimiter, default tab", "\t")
             ->addOption('--limit', '-l', InputOption::VALUE_REQUIRED, "number of records", 10)
             ->addOption('--sql', '-s', InputOption::VALUE_REQUIRED, "Query SQL")
             ->addArgument('table', InputArgument::OPTIONAL, "Table name");
@@ -34,16 +37,44 @@ class DumpCommand extends BaseCommand
             }
         }
         if (!preg_match("/ limit \d+/i", $sql)) {
-            $limit = (int) $input->getOption('limit');
+            $limit = (int)$input->getOption('limit');
             if ($limit > 0) {
                 $sql .= " LIMIT " . $limit;
             }
         }
         $connection = $this->getConnection($input);
-        echo $this->dump($connection, $sql, $input->getOption('format'));
+        $format = $input->getOption('format');
+        if ($format == 'csv') {
+            $delimiter = $input->getOption("delimiter");
+            $data = array_values($this->getData($connection, $sql));
+            $fp = fopen("php://stdout", 'w');
+            foreach ($data[0] as $row) {
+                fputcsv($fp, $row, $delimiter);
+            }
+        } else {
+            echo $this->dump($connection, $sql, $format);
+        }
     }
 
     private function dump($connection, $sql, $format)
+    {
+        $data = $this->getData($connection, $sql);
+        $comment = "dump by " . implode(" ", $_SERVER['argv']);
+        $content = DataDumper::dump($data, $format ?: 'yaml');
+        if ($format == "php") {
+            $content = sprintf("<?php\n// %s\nreturn %s;", $comment, $content);
+        } elseif ($format == "yaml") {
+            $content = sprintf("# %s\n%s", $comment, $content);
+        }
+        return $content;
+    }
+
+    /**
+     * @param Connection $connection
+     * @param string $sql
+     * @return array
+     */
+    private function getData($connection, $sql)
     {
         if (!preg_match("/select .* from (\w+) ([^;]+)/i", $sql, $matches)) {
             throw new RuntimeException("Invalid SQL: '$sql'");
@@ -52,14 +83,6 @@ class DumpCommand extends BaseCommand
         $stmt = $connection->prepare($sql);
         $stmt->execute();
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $data = [$table => $stmt->fetchAll()];
-        $comment = "dump by ". implode(" ", $_SERVER['argv']);
-        $content = DataDumper::dump($data, $format ?: 'yaml');
-        if ($format == "php") {
-            $content = sprintf("<?php\n// %s\nreturn %s;", $comment, $content);
-        } elseif ($format == "yaml") {
-            $content = sprintf("# %s\n%s", $comment, $content);
-        }
-        return $content;
+        return [$table => $stmt->fetchAll()];
     }
 }

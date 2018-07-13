@@ -43,12 +43,22 @@ class <?= $className ?>
 
 <?php endforeach ?>
 <?php foreach ($columns as $column) : ?>
+    /**
+     * @return <?= $column['varType'] ?>
+
+     */
     public function get<?= $column['methodName'] ?>()
     {
         return $this-><?= $column['varName'] ?>;
     }
     
-    public function set<?= $column['methodName'] ?>(<?= $column['paramType'] ?>$<?= $column['varName'] ?>)
+    /**
+     * @param <?= $column['varType'] ?> $<?= $column['varName'] ?>
+
+     * 
+     * @return static
+     */
+    public function set<?= $column['methodName'] ?>($<?= $column['varName'] ?>)
     {
         $this-><?= $column['varName'] ?> = $<?= $column['varName'] ?>;
         
