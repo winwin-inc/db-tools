@@ -2,16 +2,14 @@
 
 namespace winwin\db\tools\commands;
 
-use winwin\db\tools\schema\Schema;
-use Symfony\Component\Console\Input\InputInterface;
+use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Types\Type;
+use kuiper\helper\Text;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use kuiper\helper\DataDumper;
-use kuiper\helper\Text;
-use RuntimeException;
-use InvalidArgumentException;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use winwin\db\tools\schema\Schema;
 
 class GenerateCommand extends BaseCommand
 {
@@ -21,6 +19,7 @@ class GenerateCommand extends BaseCommand
         $this->setName("generate")
             ->setDescription("Generate model of database table")
             ->addOption('namespace', null, InputOption::VALUE_REQUIRED, 'model namespace')
+            ->addOption("ads", null, InputOption::VALUE_NONE, "aliyun ads")
             ->addOption('prefix', '-p', InputOption::VALUE_REQUIRED, 'table prefix')
             ->addOption('output', '-o', InputOption::VALUE_REQUIRED, 'output file name')
             ->addOption('annotation', '-a', null, 'use annotation')
@@ -32,18 +31,16 @@ class GenerateCommand extends BaseCommand
         $table = $input->getArgument('table');
         $prefix = $input->getOption('prefix');
         $namespace = $input->getOption('namespace');
-        $outputfile = $input->getOption('output');
+        $outputFile = $input->getOption('output');
         if (Text::startsWith($table, $prefix)) {
             $className = Text::camelize(substr($table, strlen($prefix)));
         } else {
             $className = Text::camelize($table);
         }
         $db = $this->getConnection($input);
-        $schema = Schema::createSchema($db, [$table]);
-        $table = $schema->getTable($table);
         $columns = [];
         $isAnnotationEnabled = $input->getOption('annotation');
-        foreach ($table->getColumns() as $name => $column) {
+        foreach ($this->getColumns($db, $table, $input) as $name => $column) {
             $camelcase = Text::camelize($name);
             $type = $this->getType($column->getType(), $isAnnotationEnabled);
             $columns[] = [
@@ -54,6 +51,7 @@ class GenerateCommand extends BaseCommand
                 'isCreatedAt' => $name == 'create_time',
                 'isUpdatedAt' => $name == 'update_time',
                 'isAutoincrement' => $column->getAutoincrement(),
+                'varCast' => in_array($type, ['int', 'string', 'double', 'float']) ? "($type) " : ''
             ];
         }
 
@@ -63,26 +61,60 @@ class GenerateCommand extends BaseCommand
             'columns' => $columns,
         ];
 
-        if ($outputfile) {
-            if (is_dir($outputfile) || Text::endsWith($outputfile, '/')) {
-                $outputfile = rtrim($outputfile, '/')."/${className}.php";
+        if ($outputFile) {
+            if (is_dir($outputFile) || Text::endsWith($outputFile, '/')) {
+                $outputFile = rtrim($outputFile, '/')."/${className}.php";
             }
-            $dir = dirname($outputfile);
+            $dir = dirname($outputFile);
             if (!is_dir($dir) && !mkdir($dir, 0777, true)) {
                 throw new \RuntimeException("cannot create directory $dir");
             }
             ob_start();
             $this->render($input, $context);
-            file_put_contents($outputfile, ob_get_clean());
-            $output->writeln("<info>Write to $outputfile</>");
+            file_put_contents($outputFile, ob_get_clean());
+            $output->writeln("<info>Write to $outputFile</>");
         } else {
             $this->render($input, $context);
         }
     }
 
+    private function getColumns($db, $table, InputInterface $input)
+    {
+        if ($input->getOption("ads")) {
+            $rows = $db->query("desc $table")
+                ->fetchAll(\PDO::FETCH_ASSOC);
+            $columns = [];
+            $adsTypes = [
+                'boolean' => Type::BOOLEAN,
+                'tinyint' => Type::INTEGER,
+                'smallint' => Type::INTEGER,
+                'int' => Type::INTEGER,
+                'bigint' => Type::INTEGER,
+                'double' => Type::FLOAT,
+                'date' => Type::DATE,
+                'timestamp' => Type::DATETIME,
+            ];
+            foreach ($rows as $row) {
+                if (isset($adsTypes[$row['DATA_TYPE']])) {
+                    $type = Type::getType($adsTypes[$row['DATA_TYPE']]);
+                } else {
+                    $type = Type::getType("string");
+                }
+                $columns[$row['COLUMN_NAME']] = new Column($row['COLUMN_NAME'], $type);
+            }
+            return $columns;
+        } else {
+            $schema = Schema::createSchema($db, [$table]);
+            $table = $schema->getTable($table);
+            return $table->getColumns();
+        }
+    }
+
     private function render(InputInterface $input, array $context)
     {
-        if ($input->getOption('annotation')) {
+        if ($input->getOption("ads")) {
+            $page = __DIR__ .'/views/ads-model.php';
+        } elseif ($input->getOption('annotation')) {
             $page = __DIR__.'/views/annotated-model.php';
         } else {
             $page = __DIR__.'/views/model.php';
@@ -91,26 +123,28 @@ class GenerateCommand extends BaseCommand
         include($page);
     }
 
-    private function getType($type, $isAnnotationEnabled)
+    private function getType(Type $type, $isAnnotationEnabled)
     {
-        $typemap = [
-            'int',
+        $typeMap = [
             'integer' => 'int',
+            'bigint' => 'int',
             'string',
             'tinyint' => 'int',
+            'float',
+            'double'
         ];
         if ($isAnnotationEnabled) {
-            $typemap = array_merge($typemap, [
+            $typeMap = array_merge($typeMap, [
                 'datetime' => '\DateTime',
                 'time' => '\DateTime',
                 'date' => '\DateTime',
             ]);
         }
         $type = $type->getName();
-        if (in_array($type, $typemap)) {
+        if (in_array($type, $typeMap)) {
             return $type;
-        } elseif (array_key_exists($type, $typemap)) {
-            return $typemap[$type];
+        } elseif (array_key_exists($type, $typeMap)) {
+            return $typeMap[$type];
         } else {
             return 'string';
         }
