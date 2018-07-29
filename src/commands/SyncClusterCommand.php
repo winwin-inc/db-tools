@@ -34,7 +34,8 @@ class SyncClusterCommand extends BaseSchemaCommand
 
         $pattern = new PatternMatcher();
         $definitions = $this->loadDefinitionsFromFile($input, $target);
-        foreach ($definitions as $table) {
+        foreach ($definitions as $name => $table) {
+            $pattern->add('#^' . $name . '$#', $table);
             if ((empty($tables) || in_array($table, $tables)) && isset($table['options']["pattern"])) {
                 $pattern->add('#^' . $table['options']["pattern"] .'$#', $table);
             }
@@ -43,8 +44,11 @@ class SyncClusterCommand extends BaseSchemaCommand
         foreach ($this->getClusterConnections($input) as $db) {
             $currentSchema = Schema::createSchema($db, $pattern);
             $toSchema = new \Doctrine\DBAL\Schema\Schema();
+            foreach ($definitions as $name => $definition) {
+                Table::fromArray($toSchema->createTable($name), $definition);
+            }
             foreach ($currentSchema->getTables() as $table) {
-                if ($pattern->match($table->getName())) {
+                if (!$toSchema->hasTable($table->getName()) && $pattern->match($table->getName())) {
                     Table::fromArray($toSchema->createTable($table->getName()), $pattern->get($table->getName()));
                 }
             }

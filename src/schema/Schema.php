@@ -77,7 +77,7 @@ class Schema
 
     private static function match($includedTables, $table)
     {
-        if (is_array($includedTables)) {
+        if (!empty($includedTables) && is_array($includedTables)) {
             return in_array($table, $includedTables);
         } elseif ($includedTables instanceof PatternMatcher) {
             return $includedTables->match($table);
