@@ -31,21 +31,32 @@ abstract class BaseSchemaCommand extends BaseCommand
             $tables = $input->getArgument('tables');
         }
         if (isset($source)) {
-            $data = DataDumper::loadFile($source);
-            if (!is_array($data)) {
-                throw new RuntimeException("Data in file $source is invalid");
-            }
-            if ($input->getOption('engine')) {
-                $engine = $input->getOption('engine');
-                foreach ($data as $table => &$defs) {
-                    if (empty($defs['options']['engine'])) {
-                        $defs['options']['engine'] = $engine;
-                    }
-                }
-            }
+            $data = $this->loadDefinitionsFromFile($input, $source);
             return Schema::createSchema($data, $tables);
         } else {
             return Schema::createSchema($this->getConnection($input), $tables);
         }
+    }
+
+    /**
+     * @param InputInterface $input
+     * @param string $file
+     * @return array
+     */
+    protected function loadDefinitionsFromFile(InputInterface $input, $file)
+    {
+        $data = DataDumper::loadFile($file);
+        if (!is_array($data)) {
+            throw new RuntimeException("Data in file $file is invalid");
+        }
+        if ($input->getOption('engine')) {
+            $engine = $input->getOption('engine');
+            foreach ($data as $table => &$defs) {
+                if (empty($defs['options']['engine'])) {
+                    $defs['options']['engine'] = $engine;
+                }
+            }
+        }
+        return $data;
     }
 }

@@ -43,10 +43,10 @@ class Schema
 
     /**
      * @param Connection|array $source
-     * @param array $includedTables
+     * @param array|PatternMatcher $includedTables
      * @return \Doctrine\DBAL\Schema\Schema 
      */
-    public static function createSchema($source, array $includedTables = null)
+    public static function createSchema($source, $includedTables = null)
     {
         if ($source instanceof Connection) {
             $conn = $source;
@@ -54,7 +54,7 @@ class Schema
             $sm = $conn->getSchemaManager();
             $tables = [];
             foreach ($sm->listTableNames() as $table) {
-                if (empty($includedTables) || in_array($table, $includedTables)) {
+                if (self::match($includedTables, $table)) {
                     $tables[] = $sm->listTableDetails($table);
                 }
             }
@@ -66,20 +66,30 @@ class Schema
         } elseif (is_array($source)) {
             self::register(null);
             $schema = new DoctrineSchema;
-            $tables = [];
             foreach ($source as $table => $definitions) {
-                if (empty($includedTables) || in_array($table, $includedTables)) {
-                    $tables[] = Table::fromArray($schema->createTable($table), $definitions);
+                if (self::match($includedTables, $table)) {
+                    Table::fromArray($schema->createTable($table), $definitions);
                 }
             }
             return $schema;
         }
     }
 
+    private static function match($includedTables, $table)
+    {
+        if (is_array($includedTables)) {
+            return in_array($table, $includedTables);
+        } elseif ($includedTables instanceof PatternMatcher) {
+            return $includedTables->match($table);
+        } else {
+            return true;
+        }
+    }
+
     /**
      * @param DoctrineSchema|SchemaDiff $schema
      * @param Connection $conn
-     * @return string
+     * @return array
      */
     public static function toSql($schema, Connection $conn)
     {

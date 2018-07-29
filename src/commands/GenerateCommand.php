@@ -91,6 +91,7 @@ class GenerateCommand extends BaseCommand
                 'int' => Type::INTEGER,
                 'bigint' => Type::INTEGER,
                 'double' => Type::FLOAT,
+                'float' => Type::FLOAT,
                 'date' => Type::DATE,
                 'timestamp' => Type::DATETIME,
             ];
