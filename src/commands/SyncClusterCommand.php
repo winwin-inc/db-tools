@@ -21,12 +21,14 @@ class SyncClusterCommand extends BaseSchemaCommand
         parent::configure();
         $this->setName('sync:cluster')
             ->setDescription("Update database cluster schema")
+            ->addOption('dry', '-d', InputOption::VALUE_NONE, "Show sql only")
             ->addOption('target', '-t', InputOption::VALUE_REQUIRED, "Database schema diff to");
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $target = $input->getOption('target');
+        $dry = $input->getOption('dry');
         $tables = $input->getArgument('tables');
         if (!$target) {
             throw new \InvalidArgumentException("The '--target' option is required");
@@ -61,6 +63,10 @@ class SyncClusterCommand extends BaseSchemaCommand
                 continue;
             }
             $sql = $this->formatSql($sqls);
+            if ($dry) {
+                echo $sql, "\n";
+                continue;
+            }
             if ($input->isInteractive()) {
                 $helper = $this->getHelper("question");
                 $question = new ConfirmationQuestion("{$sql}\nContinue execute above sql? (y/n) [n] ", false);
