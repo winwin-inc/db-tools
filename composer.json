@@ -17,7 +17,8 @@
         "symfony/console": "^3.0",
         "vlucas/phpdotenv": "^2.4",
         "deployer/phar-update": "^1.0",
-        "kuiper/helper": "^0.1"
+        "kuiper/helper": "^0.1",
+        "symfony/yaml": "^3.0"
     },
     "require-dev": {
         "kuiper/test-helper": "^0.1"

@@ -87,9 +87,9 @@ abstract class BaseCommand extends Command
     {
         $dsn = [];
         $dsn['driver'] = strtolower($this->getEnv($prefix.'DB_DRIVER', 'mysql'));
-        $dsn['username'] = $this->getEnv($prefix.'DB_USER', $this->getEnv($prefix.'DB_USERNAME'));
-        $dsn['password'] = $this->getEnv($prefix.'DB_PASS', $this->getEnv($prefix.'DB_PASSWORD'));
-        $dsn['dbname'] = $this->getEnv($prefix.'DB_NAME', $this->getEnv($prefix.'DB_DATABASE'));
+        $dsn['username'] = $this->getEnv($prefix.'DB_USERNAME', $this->getEnv($prefix.'DB_USER'));
+        $dsn['password'] = $this->getEnv($prefix.'DB_PASSWORD', $this->getEnv($prefix.'DB_PASS'));
+        $dsn['dbname'] = $this->getEnv($prefix.'DB_DATABASE', $this->getEnv($prefix.'DB_NAME'));
         if ($dsn['driver'] === 'mysql') {
             $dsn['host'] = $this->getEnv('MYSQL_PORT_3306_TCP_ADDR', $this->getEnv($prefix.'DB_HOST', self::DEFAULT_HOST));
             $dsn['port'] = $this->getEnv('MYSQL_PORT_3306_TCP_PORT', $this->getEnv($prefix.'DB_PORT', self::DEFAULT_PORT));
