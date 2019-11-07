@@ -20,6 +20,7 @@ class GenerateCommand extends BaseCommand
             ->setDescription("Generate model of database table")
             ->addOption('namespace', null, InputOption::VALUE_REQUIRED, 'model namespace')
             ->addOption("ads", null, InputOption::VALUE_NONE, "aliyun ads")
+            ->addOption("java", null, InputOption::VALUE_NONE, "aliyun ads")
             ->addOption('prefix', '-p', InputOption::VALUE_REQUIRED, 'table prefix')
             ->addOption('output', '-o', InputOption::VALUE_REQUIRED, 'output file name')
             ->addOption('annotation', '-a', null, 'use annotation')
@@ -44,8 +45,10 @@ class GenerateCommand extends BaseCommand
             $camelcase = Text::camelize($name);
             $type = $this->getType($column->getType(), $isAnnotationEnabled);
             $columns[] = [
+                'name' => $name,
                 'varName' => lcfirst($camelcase),
                 'varType' => $type,
+                'javaType' => $this->getJavaType($column->getType()),
                 'methodName' => $camelcase,
                 'paramType' => $type[0] == '\\' ? $type . ' ' : '',
                 'isCreatedAt' => $name == 'create_time',
@@ -58,6 +61,7 @@ class GenerateCommand extends BaseCommand
         $context = [
             'className' => $className,
             'namespace' => $namespace,
+            'table' => $table,
             'columns' => $columns,
         ];
 
@@ -115,6 +119,8 @@ class GenerateCommand extends BaseCommand
     {
         if ($input->getOption("ads")) {
             $page = __DIR__ .'/views/ads-model.php';
+        } elseif ($input->getOption("java")) {
+            $page = __DIR__ .'/views/jpa-model.php';
         } elseif ($input->getOption('annotation')) {
             $page = __DIR__.'/views/annotated-model.php';
         } else {
@@ -148,6 +154,29 @@ class GenerateCommand extends BaseCommand
             return $typeMap[$type];
         } else {
             return 'string';
+        }
+    }
+
+    private function getJavaType(Type $type)
+    {
+        $typeMap = [
+            'integer' => 'int',
+            'bigint' => 'int',
+            'string' => 'String',
+            'tinyint' => 'int',
+            'float' => 'double',
+            'double' => 'double',
+            'datetime' => 'java.util.Date',
+            'time' => 'java.util.Date',
+            'date' => 'java.util.Date',
+        ];
+        $type = $type->getName();
+        if (in_array($type, $typeMap)) {
+            return $type;
+        } elseif (array_key_exists($type, $typeMap)) {
+            return $typeMap[$type];
+        } else {
+            return 'String';
         }
     }
 }
