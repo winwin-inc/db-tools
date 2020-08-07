@@ -5,60 +5,53 @@
 namespace <?= $namespace ?>;
 <?php endif ?>
 
-use winwin\db\orm\annotation\Column;
-use winwin\db\orm\annotation\CreatedAt;
-use winwin\db\orm\annotation\Entity;
-use winwin\db\orm\annotation\Enum;
-use winwin\db\orm\annotation\GeneratedValue;
-use winwin\db\orm\annotation\Id;
-use winwin\db\orm\annotation\Serializer;
-use winwin\db\orm\annotation\Table;
-use winwin\db\orm\annotation\UniqueConstraint;
-use winwin\db\orm\annotation\UpdatedAt;
+use kuiper\db\annotation\CreationTimestamp;
+use kuiper\db\annotation\GeneratedValue;
+use kuiper\db\annotation\Id;
+use kuiper\db\annotation\UpdateTimestamp;
+use kuiper\db\annotation\Convert;
+use kuiper\db\converter\DateConverter;
 
-/**
- * @Entity
- * @Table
- */
 class <?= $className ?>
 
 {
 <?php foreach ($columns as $column) : ?>
     /**
-     * @Column
 <?php if ($column['isAutoincrement']) : ?>
      * @Id
      * @GeneratedValue
 <?php endif ?>
 <?php if ($column['isCreatedAt']) : ?>
-     * @CreatedAt
+     * @CreationTimestamp
 <?php endif ?>
 <?php if ($column['isUpdatedAt']) : ?>
-     * @UpdatedAt
+     * @UpdateTimestamp
 <?php endif ?>
-     * @var <?= $column['varType'] ?>
-
+<?php if ($column['dbType'] === 'date'): ?>
+     * @Convert(DateConverter::class)
+<?php endif ?>
+     * @var <?= $column['varType'] ?>|null
      */
     private $<?= $column['varName'] ?>;
 
 <?php endforeach ?>
 <?php foreach ($columns as $column) : ?>
     /**
-     * @return <?= $column['varType'] ?>
-
+     * @return <?= $column['varType'] ?>|null
      */
-    public function get<?= $column['methodName'] ?>()
+    public function get<?= $column['methodName'] ?>(): ?<?= $column['varType'] ?>
+
     {
         return $this-><?= $column['varName'] ?>;
     }
     
     /**
-     * @param <?= $column['varType'] ?> $<?= $column['varName'] ?>
+     * @param <?= $column['varType'] ?>|null $<?= $column['varName'] ?>
 
      * 
      * @return static
      */
-    public function set<?= $column['methodName'] ?>($<?= $column['varName'] ?>)
+    public function set<?= $column['methodName'] ?>(?<?= $column['varType'] ?> $<?= $column['varName'] ?>)
     {
         $this-><?= $column['varName'] ?> = $<?= $column['varName'] ?>;
         

@@ -1,11 +1,11 @@
 <?php
 namespace winwin\db\tools\commands;
 
+use winwin\db\tools\DataDumper;
 use winwin\db\tools\schema\Schema;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
-use kuiper\helper\DataDumper;
 use RuntimeException;
 use SqlFormatter;
 

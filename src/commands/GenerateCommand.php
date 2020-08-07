@@ -4,12 +4,12 @@ namespace winwin\db\tools\commands;
 
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Types\Type;
-use kuiper\helper\Text;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use winwin\db\tools\schema\Schema;
+use winwin\db\tools\Text;
 
 class GenerateCommand extends BaseCommand
 {
@@ -33,26 +33,27 @@ class GenerateCommand extends BaseCommand
         $prefix = $input->getOption('prefix');
         $namespace = $input->getOption('namespace');
         $outputFile = $input->getOption('output');
-        if (Text::startsWith($table, $prefix)) {
-            $className = Text::camelize(substr($table, strlen($prefix)));
+        if (strpos($table, $prefix) === 0) {
+            $className = Text::camelCase(substr($table, strlen($prefix)));
         } else {
-            $className = Text::camelize($table);
+            $className = Text::camelCase($table);
         }
         $db = $this->getConnection($input);
         $columns = [];
         $isAnnotationEnabled = $input->getOption('annotation');
         foreach ($this->getColumns($db, $table, $input) as $name => $column) {
-            $camelcase = Text::camelize($name);
+            $camelcase = Text::camelCase($name);
             $type = $this->getType($column->getType(), $isAnnotationEnabled);
             $columns[] = [
                 'name' => $name,
+                'dbType' => $column->getType()->getName(),
                 'varName' => lcfirst($camelcase),
                 'varType' => $type,
                 'javaType' => $this->getJavaType($column->getType()),
                 'methodName' => $camelcase,
-                'paramType' => $type[0] == '\\' ? $type . ' ' : '',
-                'isCreatedAt' => $name == 'create_time',
-                'isUpdatedAt' => $name == 'update_time',
+                'paramType' => $type[0] === '\\' ? $type . ' ' : '',
+                'isCreatedAt' => $name === 'create_time',
+                'isUpdatedAt' => $name === 'update_time',
                 'isAutoincrement' => $column->getAutoincrement(),
                 'varCast' => in_array($type, ['int', 'string', 'double', 'float']) ? "($type) " : ''
             ];
@@ -66,7 +67,7 @@ class GenerateCommand extends BaseCommand
         ];
 
         if ($outputFile) {
-            if (is_dir($outputFile) || Text::endsWith($outputFile, '/')) {
+            if (is_dir($outputFile) || $outputFile[strlen($outputFile) - 1] === '/') {
                 $outputFile = rtrim($outputFile, '/')."/${className}.php";
             }
             $dir = dirname($outputFile);
@@ -136,7 +137,7 @@ class GenerateCommand extends BaseCommand
             'integer' => 'int',
             'bigint' => 'int',
             'string',
-            'tinyint' => 'int',
+            'tinyint' => 'bool',
             'float',
             'double'
         ];
@@ -147,11 +148,11 @@ class GenerateCommand extends BaseCommand
                 'date' => '\DateTime',
             ]);
         }
-        $type = $type->getName();
-        if (in_array($type, $typeMap)) {
-            return $type;
-        } elseif (array_key_exists($type, $typeMap)) {
-            return $typeMap[$type];
+        $typeName = $type->getName();
+        if (in_array($typeName, $typeMap, true)) {
+            return $typeName;
+        } elseif (array_key_exists($typeName, $typeMap)) {
+            return $typeMap[$typeName];
         } else {
             return 'string';
         }
@@ -163,18 +164,18 @@ class GenerateCommand extends BaseCommand
             'integer' => 'int',
             'bigint' => 'int',
             'string' => 'String',
-            'tinyint' => 'int',
+            'tinyint' => 'bool',
             'float' => 'double',
             'double' => 'double',
             'datetime' => 'java.util.Date',
             'time' => 'java.util.Date',
             'date' => 'java.util.Date',
         ];
-        $type = $type->getName();
-        if (in_array($type, $typeMap)) {
+        $typeName = $type->getName();
+        if (in_array($typeName, $typeMap, true)) {
             return $type;
-        } elseif (array_key_exists($type, $typeMap)) {
-            return $typeMap[$type];
+        } elseif (array_key_exists($typeName, $typeMap)) {
+            return $typeMap[$typeName];
         } else {
             return 'String';
         }

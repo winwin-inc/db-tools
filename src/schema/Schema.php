@@ -1,12 +1,13 @@
 <?php
+
 namespace winwin\db\tools\schema;
 
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Types\Type;
-use Doctrine\DBAL\Types\BooleanType;
 use Doctrine\DBAL\Schema\Schema as DoctrineSchema;
 use Doctrine\DBAL\Schema\SchemaDiff;
+use Doctrine\DBAL\Types\Type;
+use winwin\db\tools\schema\types\EnumType;
 use winwin\db\tools\schema\types\TinyintType;
 
 class Schema
@@ -15,14 +16,19 @@ class Schema
 
     /**
      * Initialize schema setup
-     * 
+     *
      * @param Connection $conn
      * @return static
      */
     public static function register(Connection $conn = null)
     {
-        if (!Type::hasType('tinyint')) {
-            Type::addType('tinyint', TinyintType::class);
+        foreach ([
+                     TinyintType::TINYINT => TinyintType::class,
+                     EnumType::ENUM_TYPE => EnumType::class
+                 ] as $type => $typeClass) {
+            if (!Type::hasType($type)) {
+                Type::addType($type, $typeClass);
+            }
         }
         if ($conn === null) {
             return;
@@ -33,6 +39,7 @@ class Schema
         }
         $platform = $conn->getDatabasePlatform();
         $platform->registerDoctrineTypeMapping('tinyint', 'tinyint');
+        $platform->registerDoctrineTypeMapping('enum', 'enum');
         $eventManager = $platform->getEventManager();
         if ($eventManager === null) {
             $platform->setEventManager($eventManager = new EventManager);
@@ -44,7 +51,7 @@ class Schema
     /**
      * @param Connection|array $source
      * @param array|PatternMatcher $includedTables
-     * @return \Doctrine\DBAL\Schema\Schema 
+     * @return \Doctrine\DBAL\Schema\Schema
      */
     public static function createSchema($source, $includedTables = null)
     {
@@ -104,7 +111,7 @@ class Schema
     /**
      * @param DoctrineSchema|SchemaDiff $schema
      * @param Connection $conn
-     * @return string
+     * @return array
      */
     public static function toArray($schema)
     {

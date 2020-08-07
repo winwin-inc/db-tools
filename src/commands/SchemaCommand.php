@@ -2,12 +2,10 @@
 namespace winwin\db\tools\commands;
 
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use winwin\db\tools\DataDumper;
 use winwin\db\tools\schema\Schema;
-use kuiper\helper\DataDumper;
-use SqlFormatter;
 
 class SchemaCommand extends BaseSchemaCommand
 {
@@ -25,9 +23,9 @@ class SchemaCommand extends BaseSchemaCommand
         $source = $input->getOption('source');
         $format = $input->getOption('format');
         $schema = $this->createSchema($input, $source);
-        if ($format == "sql") {
+        if ($format === "sql") {
             echo $this->formatSql(Schema::toSql($schema, $this->getConnection($input)));
-        } elseif ($format == 'columns') {
+        } elseif ($format === 'columns') {
             echo DataDumper::dump(array_map(function($table) {
                 return array_keys($table['columns']);
             }, Schema::toArray($schema)), 'json');

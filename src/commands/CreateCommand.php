@@ -2,17 +2,10 @@
 namespace winwin\db\tools\commands;
 
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
-use winwin\db\tools\schema\Schema;
 use winwin\db\tools\Db;
-use kuiper\helper\DataDumper;
-use kuiper\helper\Arrays;
-use Doctrine\DBAL\Schema\Comparator;
-use SqlFormatter;
-use PDOException;
 
 class CreateCommand extends BaseCommand
 {
@@ -49,10 +42,10 @@ class CreateCommand extends BaseCommand
         if ($dsn) {
             $url = parse_url($dsn);
             $dbname = ltrim($dsn, $url['path']);
-            $username = Arrays::fetch($url, 'user');
-            $password = Arrays::fetch($url, 'pass');
-            parse_str(Arrays::fetch($url, 'query'), $query);
-            $charset = Arrays::fetch($query, 'charset');
+            $username = $url['user'] ?? null;
+            $password = $url['pass'] ?? null;
+            parse_str($url['query'] ?? '', $query);
+            $charset = $query['charset'] ?? null;
         } else {
             $dsn = $this->getDsnFromEnv($prefix);
             $dbname = $dsn['dbname'];

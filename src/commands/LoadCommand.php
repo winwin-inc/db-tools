@@ -1,15 +1,13 @@
 <?php
 namespace winwin\db\tools\commands;
 
-use kuiper\helper\Arrays;
-use Symfony\Component\Console\Input\InputInterface;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Schema\Column;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use kuiper\helper\DataDumper;
-use RuntimeException;
-use InvalidArgumentException;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use winwin\db\tools\DataDumper;
 
 class LoadCommand extends BaseCommand
 {
@@ -47,7 +45,9 @@ class LoadCommand extends BaseCommand
                     continue;
                 }
                 $columns = $db->getSchemaManager()->listTableColumns($table);
-                $fields = array_intersect(array_keys($rows[0]), Arrays::pull($columns, 'name', Arrays::GETTER));
+                $fields = array_intersect(array_keys($rows[0]), array_map(function(Column $column) {
+                    return $column->getName();
+                }, $columns));
                 if ($truncate) {
                     $db->executeUpdate("truncate `$table`");
                 }
@@ -63,7 +63,7 @@ class LoadCommand extends BaseCommand
                     $bindValues = [];
                     foreach ($batchRows as $row) {
                         foreach ($fields as $name) {
-                            $bindValues[] = isset($row[$name]) ? $row[$name] : null;
+                            $bindValues[] = $row[$name] ?? null;
                         }
                     }
                     $stmt = $db->prepare($sql);

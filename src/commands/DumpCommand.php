@@ -7,10 +7,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use kuiper\helper\DataDumper;
-use kuiper\helper\Text;
 use RuntimeException;
 use PDO;
+use winwin\db\tools\DataDumper;
 
 class DumpCommand extends BaseCommand
 {
@@ -45,14 +44,14 @@ class DumpCommand extends BaseCommand
         }
         $connection = $this->getConnection($input);
         $format = $input->getOption('format');
-        if ($format == 'csv') {
+        if ($format === 'csv') {
             $delimiter = $input->getOption("delimiter");
             $data = array_values($this->getData($connection, $sql));
-            $fp = fopen("php://stdout", 'w');
+            $fp = fopen("php://stdout", 'wb');
             foreach ($data[0] as $row) {
                 fputcsv($fp, $row, $delimiter);
             }
-        } elseif ($format == 'xml') {
+        } elseif ($format === 'xml') {
             $this->formatXmlDataset($connection, $sql, $format);
         } else {
             echo $this->dump($connection, $sql, $format);
@@ -80,9 +79,9 @@ class DumpCommand extends BaseCommand
         $data = $this->getData($connection, $sql);
         $comment = "dump by " . implode(" ", $_SERVER['argv']);
         $content = DataDumper::dump($data, $format ?: 'yaml');
-        if ($format == "php") {
+        if ($format === "php") {
             $content = sprintf("<?php\n// %s\nreturn %s;", $comment, $content);
-        } elseif ($format == "yaml") {
+        } elseif ($format === "yaml") {
             $content = sprintf("# %s\n%s", $comment, $content);
         }
         return $content;
