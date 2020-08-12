@@ -3,6 +3,7 @@
 namespace winwin\db\tools\commands;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -13,7 +14,7 @@ use winwin\db\tools\DataDumper;
 
 class DumpCommand extends BaseCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName("dump")
@@ -25,7 +26,7 @@ class DumpCommand extends BaseCommand
             ->addArgument('table', InputArgument::OPTIONAL, "Table name");
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $sql = $input->getOption('sql');
         if (empty($sql)) {
@@ -56,9 +57,11 @@ class DumpCommand extends BaseCommand
         } else {
             echo $this->dump($connection, $sql, $format);
         }
+
+        return 0;
     }
 
-    private function formatXmlDataset($connection, $sql, $format)
+    private function formatXmlDataset(Connection $connection, string $sql, string $format): void
     {
         $data = $this->getData($connection, $sql);
 
@@ -66,7 +69,7 @@ class DumpCommand extends BaseCommand
         echo "<dataset>\n";
         foreach ($data as $table => $rows) {
             foreach ($rows as $row) {
-                echo "    <$table " . implode("\n       ", array_map(function($key, $val) {
+                echo "    <$table " . implode("\n       ", array_map(function($key, $val): string {
                     return $key . "=\"" . addslashes($val) . "\"";
                 }, array_keys($row), array_values($row))). " />\n";
             }
@@ -74,11 +77,11 @@ class DumpCommand extends BaseCommand
         echo "</dataset>\n";
     }
 
-    private function dump($connection, $sql, $format)
+    private function dump(Connection $connection, string $sql, ?string $format): string
     {
         $data = $this->getData($connection, $sql);
         $comment = "dump by " . implode(" ", $_SERVER['argv']);
-        $content = DataDumper::dump($data, $format ?: 'yaml');
+        $content = DataDumper::dump($data, $format ?? 'yaml');
         if ($format === "php") {
             $content = sprintf("<?php\n// %s\nreturn %s;", $comment, $content);
         } elseif ($format === "yaml") {
@@ -91,8 +94,9 @@ class DumpCommand extends BaseCommand
      * @param Connection $connection
      * @param string $sql
      * @return array
+     * @throws DBALException
      */
-    private function getData($connection, $sql)
+    private function getData(Connection $connection, string $sql): array
     {
         if (!preg_match("/select .* from (\w+) ([^;]+)/i", $sql, $matches)) {
             throw new RuntimeException("Invalid SQL: '$sql'");

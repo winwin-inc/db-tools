@@ -1,6 +1,7 @@
 <?php
 namespace winwin\db\tools\commands;
 
+use Doctrine\DBAL\Connection;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -9,7 +10,7 @@ use winwin\db\tools\Db;
 
 class CreateCommand extends BaseCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('create')
@@ -17,7 +18,7 @@ class CreateCommand extends BaseCommand
             ->addOption('root-connection', null, InputOption::VALUE_REQUIRED, "Connection dsn for root");
     }
 
-    protected function getRootConnection(InputInterface $input)
+    protected function getRootConnection(InputInterface $input): Connection
     {
         $dsn = $input->getOption('root-connection');
         if (empty($dsn)) {
@@ -34,12 +35,12 @@ class CreateCommand extends BaseCommand
         return Db::getConnection($dsn);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $db = $this->getRootConnection($input);
         $prefix = $input->getOption('env-prefix');
         $dsn = $this->getEnv($prefix.'DB_DSN');
-        if ($dsn) {
+        if (!empty($dsn)) {
             $url = parse_url($dsn);
             $dbname = ltrim($dsn, $url['path']);
             $username = $url['user'] ?? null;
@@ -53,9 +54,9 @@ class CreateCommand extends BaseCommand
             $password = $dsn['password'];
             $charset = $dsn['charset'];
         }
-        if (in_array($dbname, $db->getSchemaManager()->listDatabases())) {
+        if (in_array($dbname, $db->getSchemaManager()->listDatabases(), true)) {
             $output->writeln("<info>Database $dbname already exists</>");
-            return;
+            return 0;
         }
         $sqls = [
             sprintf("CREATE database IF NOT EXISTS $dbname%s;", $charset ? ' DEFAULT CHARACTER SET utf8' : ''),
@@ -67,11 +68,12 @@ class CreateCommand extends BaseCommand
             $helper = $this->getHelper("question");
             $question = new ConfirmationQuestion(implode("\n", $sqls) . "\nContinue execute above sql? (y/n) [n] ", false);
             if (!$helper->ask($input, $output, $question)) {
-                return;
+                return 0;
             }
         }
         foreach ($sqls as $sql) {
             $db->executeUpdate($sql);
         }
+        return 0;
     }
 }

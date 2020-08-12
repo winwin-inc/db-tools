@@ -14,7 +14,7 @@ use PDOException;
 
 class SyncCommand extends BaseSchemaCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('sync')
@@ -23,17 +23,17 @@ class SyncCommand extends BaseSchemaCommand
             ->addOption('target', '-t', InputOption::VALUE_REQUIRED, "Database schema diff to");
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $target = $input->getOption('target');
         $tables = $input->getArgument('tables');
         $purge = $input->getOption('purge');
-        if (!$target) {
+        if (empty($target)) {
             throw new \InvalidArgumentException("The '--target' option is required");
         }
         $toSchema = $this->createSchema($input, $target);
         if (!$purge && empty($tables)) {
-            $tables = array_map(function ($table) {
+            $tables = array_map(static function ($table): string {
                 return $table->getName();
             }, $toSchema->getTables());
         }
@@ -43,27 +43,28 @@ class SyncCommand extends BaseSchemaCommand
         $sqls = Schema::toSql($diff, $db = $this->getConnection($input));
         
         if (empty($sqls)) {
-            $output->writeln("<info>No changes</>");
-            return;
+            $output->writeln("<info>No changes</info>");
+            return 0;
         } 
         $sql = $this->formatSql($sqls);
         if ($input->isInteractive()) {
             $helper = $this->getHelper("question");
             $question = new ConfirmationQuestion("{$sql}\nContinue execute above sql? (y/n) [n] ", false);
             if (!$helper->ask($input, $output, $question)) {
-                return;
+                return 0;
             }
         }
-        foreach ($sqls as $sql) {
+        foreach ($sqls as $stmt) {
             try {
-                $db->executeUpdate($sql);
+                $db->executeUpdate($stmt);
                 $errorInfo = $db->errorInfo();
-                if ($errorInfo && isset($errorInfo[1])) {
-                    $output->writeln(sprintf("<error>Fail to execute '%s': %s</>", $sql, json_encode($errorInfo)));
+                if (isset($errorInfo[1])) {
+                    $output->writeln(sprintf("<error>Fail to execute '%s': %s</error>", $stmt, json_encode($errorInfo)));
                 }
             } catch (PDOException $e) {
-                $output->writeln(sprintf("<error>Fail to execute '%s': %s</>", $sql, $e->getMessage() . " " . json_encode($e->errorInfo())));
+                $output->writeln(sprintf("<error>Fail to execute '%s': %s</error>", $stmt, $e->getMessage() . " " . json_encode($e->errorInfo)));
             }
         }
+        return 0;
     }
 }

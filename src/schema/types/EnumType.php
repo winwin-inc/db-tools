@@ -9,24 +9,36 @@ use Doctrine\DBAL\Types\Type;
 
 class EnumType extends Type
 {
-    const ENUM_TYPE = 'enum';
+    public const ENUM_TYPE = 'enum';
 
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform)
+    /**
+     * @inheritDoc
+     */
+    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform): string
     {
         return self::ENUM_TYPE;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function convertToPHPValue($value, AbstractPlatform $platform)
     {
         return (string) $value;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function convertToDatabaseValue($value, AbstractPlatform $platform)
     {
         return $value;
     }
 
-    public function getName()
+    /**
+     * @inheritDoc
+     */
+    public function getName(): string
     {
         return self::ENUM_TYPE;
     }

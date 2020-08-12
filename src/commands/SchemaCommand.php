@@ -9,7 +9,7 @@ use winwin\db\tools\schema\Schema;
 
 class SchemaCommand extends BaseSchemaCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('schema')
@@ -18,7 +18,7 @@ class SchemaCommand extends BaseSchemaCommand
             ->addOption('format', '-f', InputOption::VALUE_REQUIRED, "Output format, support sql|yaml|json|php", 'yaml');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $source = $input->getOption('source');
         $format = $input->getOption('format');
@@ -26,11 +26,12 @@ class SchemaCommand extends BaseSchemaCommand
         if ($format === "sql") {
             echo $this->formatSql(Schema::toSql($schema, $this->getConnection($input)));
         } elseif ($format === 'columns') {
-            echo DataDumper::dump(array_map(function($table) {
+            echo DataDumper::dump(array_map(function($table): array {
                 return array_keys($table['columns']);
             }, Schema::toArray($schema)), 'json');
         } else {
             echo DataDumper::dump(Schema::toArray($schema), $format);
         }
+        return 0;
     }
 }

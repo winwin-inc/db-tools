@@ -1,6 +1,8 @@
 <?php
 namespace winwin\db\tools;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\DriverManager;
 use InvalidArgumentException;
 use PDO;
@@ -11,13 +13,14 @@ abstract class Db
      * creates database connect by dsn
      *
      * @param string|array|PDO $dsn
-     * @return \Doctrine\DBAL\Connection
+     * @return Connection
+     * @throws DBALException
      */
-    public static function getConnection($dsn)
+    public static function getConnection($dsn): Connection
     {
         if (is_array($dsn)) {
             $options = [];
-            $driver = isset($dsn['driver']) ? $dsn['driver'] : (isset($dsn['adapter']) ? $dsn['adapter'] : 'mysql');
+            $driver = $dsn['driver'] ?? $dsn['adapter'] ?? 'mysql';
             if (strpos($driver, 'pdo_') === false) {
                 $driver = 'pdo_' . strtolower($driver);
             }
@@ -46,6 +49,8 @@ abstract class Db
             $options = ['url' => $dsn];
         } elseif ($dsn instanceof PDO) {
             $options = ['pdo' => $dsn];
+        } else {
+            throw new \InvalidArgumentException("Unknown dsn type " . gettype($dsn));
         }
         return DriverManager::getConnection($options);
     }

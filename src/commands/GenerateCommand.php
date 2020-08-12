@@ -2,8 +2,10 @@
 
 namespace winwin\db\tools\commands;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\Types;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -13,7 +15,7 @@ use winwin\db\tools\Text;
 
 class GenerateCommand extends BaseCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName("generate")
@@ -27,7 +29,7 @@ class GenerateCommand extends BaseCommand
             ->addArgument('table', InputArgument::REQUIRED, "model for the table name");
     }
  
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $table = $input->getArgument('table');
         $prefix = $input->getOption('prefix');
@@ -55,7 +57,7 @@ class GenerateCommand extends BaseCommand
                 'isCreatedAt' => $name === 'create_time',
                 'isUpdatedAt' => $name === 'update_time',
                 'isAutoincrement' => $column->getAutoincrement(),
-                'varCast' => in_array($type, ['int', 'string', 'double', 'float']) ? "($type) " : ''
+                'varCast' => in_array($type, ['int', 'string', 'double', 'float'], true) ? "($type) " : ''
             ];
         }
 
@@ -71,7 +73,7 @@ class GenerateCommand extends BaseCommand
                 $outputFile = rtrim($outputFile, '/')."/${className}.php";
             }
             $dir = dirname($outputFile);
-            if (!is_dir($dir) && !mkdir($dir, 0777, true)) {
+            if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
                 throw new \RuntimeException("cannot create directory $dir");
             }
             ob_start();
@@ -81,24 +83,33 @@ class GenerateCommand extends BaseCommand
         } else {
             $this->render($input, $context);
         }
+        return 0;
     }
 
-    private function getColumns($db, $table, InputInterface $input)
+    /**
+     * @param Connection $db
+     * @param string $table
+     * @param InputInterface $input
+     * @return Column[]
+     * @throws \Doctrine\DBAL\DBALException
+     * @throws \Doctrine\DBAL\Schema\SchemaException
+     */
+    private function getColumns(Connection $db, string $table, InputInterface $input): array
     {
         if ($input->getOption("ads")) {
             $rows = $db->query("desc $table")
                 ->fetchAll(\PDO::FETCH_ASSOC);
             $columns = [];
             $adsTypes = [
-                'boolean' => Type::BOOLEAN,
-                'tinyint' => Type::INTEGER,
-                'smallint' => Type::INTEGER,
-                'int' => Type::INTEGER,
-                'bigint' => Type::INTEGER,
-                'double' => Type::FLOAT,
-                'float' => Type::FLOAT,
-                'date' => Type::DATE,
-                'timestamp' => Type::DATETIME,
+                'boolean' => Types::BOOLEAN,
+                'tinyint' => Types::INTEGER,
+                'smallint' => Types::INTEGER,
+                'int' => Types::INTEGER,
+                'bigint' => Types::INTEGER,
+                'double' => Types::FLOAT,
+                'float' => Types::FLOAT,
+                'date' => Types::DATE_MUTABLE,
+                'timestamp' => Types::DATETIME_MUTABLE,
             ];
             foreach ($rows as $row) {
                 if (isset($adsTypes[$row['DATA_TYPE']])) {
@@ -116,7 +127,7 @@ class GenerateCommand extends BaseCommand
         }
     }
 
-    private function render(InputInterface $input, array $context)
+    private function render(InputInterface $input, array $context): void
     {
         if ($input->getOption("ads")) {
             $page = __DIR__ .'/views/ads-model.php';
@@ -131,7 +142,7 @@ class GenerateCommand extends BaseCommand
         include($page);
     }
 
-    private function getType(Type $type, $isAnnotationEnabled)
+    private function getType(Type $type, bool $isAnnotationEnabled): string
     {
         $typeMap = [
             'integer' => 'int',
@@ -158,7 +169,7 @@ class GenerateCommand extends BaseCommand
         }
     }
 
-    private function getJavaType(Type $type)
+    private function getJavaType(Type $type): string
     {
         $typeMap = [
             'integer' => 'int',

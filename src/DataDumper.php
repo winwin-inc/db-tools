@@ -8,7 +8,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class DataDumper
 {
-    public static $FORMATS = [
+    public const FORMATS = [
         'json' => 'json',
         'yaml' => 'yaml',
         'yml' => 'yaml',
@@ -21,15 +21,15 @@ class DataDumper
      *
      * @return string
      */
-    public static function json($data, $pretty = true)
+    public static function json($data, bool $pretty = true): string
     {
         if ($pretty) {
             $flags = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
 
             return json_encode($data, $flags)."\n";
-        } else {
-            return json_encode($data);
         }
+
+        return json_encode($data);
     }
 
     /**
@@ -38,7 +38,7 @@ class DataDumper
      *
      * @return string
      */
-    public static function yaml($data, $pretty = true)
+    public static function yaml($data, bool $pretty = true): string
     {
         return Yaml::dump($data, $pretty ? 4 : 2, 2);
     }
@@ -48,7 +48,7 @@ class DataDumper
      *
      * @return string
      */
-    public static function php($data)
+    public static function php($data): string
     {
         return var_export($data, true);
     }
@@ -62,7 +62,7 @@ class DataDumper
      *
      * @return string
      */
-    public static function dump($data, $format = 'yaml', $pretty = true)
+    public static function dump($data, string $format = 'yaml', bool $pretty = true): string
     {
         return self::$format($data, $pretty);
     }
@@ -75,16 +75,17 @@ class DataDumper
      *
      * @return mixed
      */
-    public static function load($content, $format)
+    public static function load(string $content, string $format)
     {
-        if ($format === 'json') {
-            return json_decode($content, true);
-        } elseif ($format === 'yaml') {
-            return Yaml::parse($content);
-        } elseif ($format === 'php') {
-            return eval('return '.$content.';');
-        } else {
-            throw new InvalidArgumentException("Invalid format '{$format}'");
+        switch ($format) {
+            case 'json':
+                return json_decode($content, true);
+            case 'yaml':
+                return Yaml::parse($content);
+            case 'php':
+                return eval('return '.$content.';');
+            default:
+                throw new InvalidArgumentException("Invalid format '{$format}'");
         }
     }
 
@@ -95,14 +96,14 @@ class DataDumper
      *
      * @return string
      */
-    public static function guessFormat($file)
+    public static function guessFormat(string $file): string
     {
         $ext = pathinfo($file, PATHINFO_EXTENSION);
-        if (!isset(self::$FORMATS[$ext])) {
+        if (!isset(self::FORMATS[$ext])) {
             throw new InvalidArgumentException("Cannot guess format from file '{$file}'");
         }
 
-        return self::$FORMATS[$ext];
+        return self::FORMATS[$ext];
     }
 
     /**
@@ -111,22 +112,23 @@ class DataDumper
      * @param string $file
      * @param string $format file format. If null, determine from file extension
      *
-     * @return array
+     * @return mixed
      */
-    public static function loadFile($file, $format = null)
+    public static function loadFile(string $file, ?string $format = null)
     {
         if (!isset($format)) {
             $format = self::guessFormat($file);
         }
-        if ($format === 'json') {
-            return json_decode(file_get_contents($file), true);
-        } elseif ($format === 'yaml') {
-            return Yaml::parse(file_get_contents($file));
-        } elseif ($format === 'php') {
-            /* @noinspection PhpIncludeInspection */
-            return require $file;
-        } else {
-            throw new InvalidArgumentException("Invalid format '{$format}'");
+        switch ($format) {
+            case 'json':
+                return json_decode(file_get_contents($file), true);
+            case 'yaml':
+                return Yaml::parse(file_get_contents($file));
+            case 'php':
+                /* @noinspection PhpIncludeInspection */
+                return require $file;
+            default:
+                throw new InvalidArgumentException("Invalid format '{$format}'");
         }
     }
 
@@ -140,7 +142,7 @@ class DataDumper
      *
      * @return bool|int
      */
-    public static function dumpFile($file, $data, $format = null, $pretty = true)
+    public static function dumpFile(string $file, $data, ?string $format = null, bool $pretty = true)
     {
         if (!isset($format)) {
             $format = self::guessFormat($file);

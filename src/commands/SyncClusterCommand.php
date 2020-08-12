@@ -3,6 +3,7 @@
 namespace winwin\db\tools\commands;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Comparator;
 use PDOException;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,7 +17,7 @@ use winwin\db\tools\schema\Table;
 
 class SyncClusterCommand extends BaseSchemaCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('sync:cluster')
@@ -25,7 +26,7 @@ class SyncClusterCommand extends BaseSchemaCommand
             ->addOption('target', '-t', InputOption::VALUE_REQUIRED, "Database schema diff to");
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $target = $input->getOption('target');
         $dry = $input->getOption('dry');
@@ -38,7 +39,7 @@ class SyncClusterCommand extends BaseSchemaCommand
         $definitions = $this->loadDefinitionsFromFile($input, $target);
         foreach ($definitions as $name => $table) {
             $pattern->add('#^' . $name . '$#', $table);
-            if ((empty($tables) || in_array($table, $tables)) && isset($table['options']["pattern"])) {
+            if ((empty($tables) || in_array($table, $tables, true)) && isset($table['options']["pattern"])) {
                 $pattern->add('#^' . $table['options']["pattern"] .'$#', $table);
             }
         }
@@ -59,7 +60,7 @@ class SyncClusterCommand extends BaseSchemaCommand
             $sqls = Schema::toSql($diff, $db);
 
             if (empty($sqls)) {
-                $output->writeln("<info>No changes</>");
+                $output->writeln("<info>No changes</info>");
                 continue;
             }
             $sql = $this->formatSql($sqls);
@@ -71,28 +72,30 @@ class SyncClusterCommand extends BaseSchemaCommand
                 $helper = $this->getHelper("question");
                 $question = new ConfirmationQuestion("{$sql}\nContinue execute above sql? (y/n) [n] ", false);
                 if (!$helper->ask($input, $output, $question)) {
-                    return;
+                    return 0;
                 }
             }
-            foreach ($sqls as $sql) {
+            foreach ($sqls as $stmt) {
                 try {
-                    $db->executeUpdate($sql);
+                    $db->executeUpdate($stmt);
                     $errorInfo = $db->errorInfo();
-                    if ($errorInfo && isset($errorInfo[1])) {
-                        $output->writeln(sprintf("<error>Fail to execute '%s': %s</>", $sql, json_encode($errorInfo)));
+                    if (isset($errorInfo[1])) {
+                        $output->writeln(sprintf("<error>Fail to execute '%s': %s</error>", $stmt, json_encode($errorInfo)));
                     }
                 } catch (PDOException $e) {
-                    $output->writeln(sprintf("<error>Fail to execute '%s': %s</>", $sql, $e->getMessage() . " " . json_encode($e->errorInfo())));
+                    $output->writeln(sprintf("<error>Fail to execute '%s': %s</error>", $stmt, $e->getMessage() . " " . json_encode($e->errorInfo)));
                 }
             }
         }
+        return 0;
     }
 
     /**
      * @param InputInterface $input
-     * @return Connection[]
+     * @return \Generator<Connection>
+     * @throws DBALException
      */
-    private function getClusterConnections($input)
+    private function getClusterConnections(InputInterface $input)
     {
         $this->loadEnv($input);
         $prefix = $input->getOption('env-prefix');
@@ -111,7 +114,7 @@ class SyncClusterCommand extends BaseSchemaCommand
                 $dsn["dbname"] = $this->getEnv($prefix."DB{$index}_NAME", $this->getEnv($prefix."DB_NAME"));
                 if ($dsn["driver"] === "mysql") {
                     $dsn["host"] = $host;
-                    $dsn["port"] = $this->getEnv($prefix."DB{$index}_PORT", self::DEFAULT_PORT);
+                    $dsn["port"] = (int) $this->getEnv($prefix."DB{$index}_PORT", (string)self::DEFAULT_PORT);
                     $dsn["charset"] = $this->getEnv($prefix."DB_CHARSET", self::DEFAULT_CHARSET);
                     $dsn["unix_socket"] = $this->getEnv($prefix."DB{$index}_SOCKET", $this->getEnv($prefix."DB_SOCKET"));
                 }

@@ -4,6 +4,7 @@ namespace winwin\db\tools\schema;
 
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Schema as DoctrineSchema;
 use Doctrine\DBAL\Schema\SchemaDiff;
 use Doctrine\DBAL\Types\Type;
@@ -12,15 +13,16 @@ use winwin\db\tools\schema\types\TinyintType;
 
 class Schema
 {
+    /**
+     * @var array<string,bool>
+     */
     private static $REGISTRY;
 
     /**
-     * Initialize schema setup
-     *
-     * @param Connection $conn
-     * @return static
+     * @param Connection|null $conn
+     * @throws DBALException
      */
-    public static function register(Connection $conn = null)
+    public static function register(?Connection $conn = null): void
     {
         foreach ([
                      TinyintType::TINYINT => TinyintType::class,
@@ -51,9 +53,10 @@ class Schema
     /**
      * @param Connection|array $source
      * @param array|PatternMatcher $includedTables
-     * @return \Doctrine\DBAL\Schema\Schema
+     * @return DoctrineSchema
+     * @throws DBALException
      */
-    public static function createSchema($source, $includedTables = null)
+    public static function createSchema($source, $includedTables = null): ?DoctrineSchema
     {
         if ($source instanceof Connection) {
             $conn = $source;
@@ -70,7 +73,9 @@ class Schema
                 $namespaces = $sm->listNamespaceNames();
             }
             return new DoctrineSchema($tables, [], $sm->createSchemaConfig(), $namespaces);
-        } elseif (is_array($source)) {
+        }
+
+        if (is_array($source)) {
             self::register(null);
             $schema = new DoctrineSchema;
             foreach ($source as $table => $definitions) {
@@ -80,12 +85,18 @@ class Schema
             }
             return $schema;
         }
+        throw new \InvalidArgumentException("Cannot create schema from " . gettype($source));
     }
 
-    private static function match($includedTables, $table)
+    /**
+     * @param string[]|PatternMatcher $includedTables
+     * @param string $table
+     * @return bool
+     */
+    private static function match($includedTables, string $table): bool
     {
         if (!empty($includedTables) && is_array($includedTables)) {
-            return in_array($table, $includedTables);
+            return in_array($table, $includedTables, true);
         } elseif ($includedTables instanceof PatternMatcher) {
             return $includedTables->match($table);
         } else {
@@ -97,8 +108,9 @@ class Schema
      * @param DoctrineSchema|SchemaDiff $schema
      * @param Connection $conn
      * @return array
+     * @throws DBALException
      */
-    public static function toSql($schema, Connection $conn)
+    public static function toSql($schema, Connection $conn): array
     {
         self::register($conn);
         if ($schema instanceof DoctrineSchema) {
@@ -106,14 +118,14 @@ class Schema
         } elseif ($schema instanceof SchemaDiff) {
             return $schema->toSql($conn->getDatabasePlatform());
         }
+        throw new \InvalidArgumentException("invalid schema " . gettype($schema));
     }
 
     /**
      * @param DoctrineSchema|SchemaDiff $schema
-     * @param Connection $conn
      * @return array
      */
-    public static function toArray($schema)
+    public static function toArray($schema): array
     {
         if ($schema instanceof DoctrineSchema) {
             $tables = [];
@@ -124,5 +136,6 @@ class Schema
         } elseif ($schema instanceof SchemaDiff) {
             return [];
         }
+        throw new \InvalidArgumentException("invalid schema " . gettype($schema));
     }
 }

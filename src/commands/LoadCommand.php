@@ -11,7 +11,7 @@ use winwin\db\tools\DataDumper;
 
 class LoadCommand extends BaseCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName("load")
@@ -22,7 +22,7 @@ class LoadCommand extends BaseCommand
             ->addArgument('file', InputArgument::OPTIONAL, "Data input file, default read from stdin");
     }
  
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $truncate = $input->getOption('truncate');
         $format = $input->getOption('format');
@@ -40,22 +40,22 @@ class LoadCommand extends BaseCommand
         }
         $db = $this->getConnection($input);
         try {
-            foreach ($dataset as $table => $rows) {
+            foreach ($dataset as $tableName => $rows) {
                 if (empty($rows)) {
                     continue;
                 }
-                $columns = $db->getSchemaManager()->listTableColumns($table);
-                $fields = array_intersect(array_keys($rows[0]), array_map(function(Column $column) {
+                $columns = $db->getSchemaManager()->listTableColumns($tableName);
+                $fields = array_intersect(array_keys($rows[0]), array_map(function(Column $column): string {
                     return $column->getName();
                 }, $columns));
                 if ($truncate) {
-                    $db->executeUpdate("truncate `$table`");
+                    $db->executeUpdate("truncate `$tableName`");
                 }
                 $batchSize = 1000;
                 foreach (array_chunk($rows, $batchSize) as $batchRows) {
                     $sql = sprintf(
                         'INSERT INTO `%s` (`%s`) VALUES',
-                        $table,
+                        $tableName,
                         implode('`,`', $fields)
                     );
                     $rowPlaceholder = sprintf('(%s)', implode(',', array_fill(0, count($fields), '?')));
@@ -69,7 +69,7 @@ class LoadCommand extends BaseCommand
                     $stmt = $db->prepare($sql);
                     $stmt->execute($bindValues);
                 }
-                $output->writeln(sprintf("<info>Load %d records to table %s</>", count($rows), $table));
+                $output->writeln(sprintf("<info>Load %d records to table %s</>", count($rows), $tableName));
             }
         } catch (UniqueConstraintViolationException $e) {
             if (isset($_SERVER["argv"])) {
@@ -84,5 +84,6 @@ class LoadCommand extends BaseCommand
                 $example
             ));
         }
+        return 0;
     }
 }

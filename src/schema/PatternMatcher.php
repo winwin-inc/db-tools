@@ -11,18 +11,26 @@ class PatternMatcher
      */
     private $targets;
 
-    public function add($pattern, $target)
+    /**
+     * @param string $pattern
+     * @param mixed $target
+     */
+    public function add(string $pattern, $target): void
     {
         $this->targets[] = [$pattern, $target];
     }
 
-    public function match($name)
+    public function match(string $name): bool
     {
         $target = $this->get($name);
         return isset($target);
     }
 
-    public function get($name)
+    /**
+     * @param string $name
+     * @return mixed|null
+     */
+    public function get(string $name)
     {
         foreach ($this->targets as $one) {
             if (preg_match($one[0], $name)) {

@@ -2,12 +2,13 @@
 <?php
 use Symfony\Component\Console\Application;
 
-foreach ([__DIR__.'/../../autoload.php', __DIR__.'/../vendor/autoload.php'] as $file) {
+foreach (array(__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php') as $file) {
     if (file_exists($file)) {
-        $loader = require($file);
+        $autoload = $file;
+        break;
     }
 }
-if (!isset($loader)) {
+if (!isset($autoload)) {
     fwrite(STDERR,
         'You need to set up the project dependencies using the following commands:' . PHP_EOL .
         'wget http://getcomposer.org/composer.phar' . PHP_EOL .
@@ -16,14 +17,10 @@ if (!isset($loader)) {
 
     die(1);
 }
+require($autoload);
+unset($autoload);
 
 $app = new Application("db-tools", '@git-version@');
-$app->getHelperSet()->set(new \Deployer\Component\PharUpdate\Console\Helper());
-$selfUpdate = new \Deployer\Component\PharUpdate\Console\Command('self-update');
-$selfUpdate->setDescription("Updates db.phar to the latest version.")
-    ->setManifestUri("http://mirrors.cuntutu.com/db/manifest.json");
-$app->add($selfUpdate);
-
 $app->add(new \winwin\db\tools\commands\DumpCommand());
 $app->add(new \winwin\db\tools\commands\LoadCommand());
 $app->add(new \winwin\db\tools\commands\SchemaCommand());

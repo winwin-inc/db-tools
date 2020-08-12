@@ -6,24 +6,36 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 
 class TinyintType extends Type
 {
-    const TINYINT = 'tinyint';
+    public const TINYINT = 'tinyint';
 
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform)
+    /**
+     * @inheritDoc
+     */
+    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform): string
     {
         return self::TINYINT;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function convertToPHPValue($value, AbstractPlatform $platform)
     {
         return (int) $value;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function convertToDatabaseValue($value, AbstractPlatform $platform)
     {
         return $value;
     }
 
-    public function getName()
+    /**
+     * @inheritDoc
+     */
+    public function getName(): string
     {
         return self::TINYINT;
     }

@@ -4,6 +4,8 @@
     "description": "Database tools for schema and data management",
     "keywords": [],
     "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "authors": [
         {
             "name": "Ye Wenbin",
@@ -11,28 +13,24 @@
         }
     ],
     "require": {
-        "php": "^5.5 || ^7.0",
+        "php": "^7.2",
+        "ext-pdo": "*",
+        "ext-json": "*",
         "doctrine/dbal": "^2.5",
         "jdorn/sql-formatter": "^1.2",
-        "symfony/console": "^3.0",
-        "vlucas/phpdotenv": "^2.4",
-        "deployer/phar-update": "^1.0",
-        "kuiper/helper": "^0.1",
-        "symfony/yaml": "^3.0"
+        "symfony/console": "^5.1",
+        "symfony/yaml": "^5.1",
+        "vlucas/phpdotenv": "^5.1"
     },
     "require-dev": {
-        "kuiper/test-helper": "^0.1"
+        "phpstan/extension-installer": "^1.0",
+        "phpstan/phpstan": "^0.12.34",
+        "phpstan/phpstan-strict-rules": "^0.12.4",
+        "winwin/composer-phpcs-plugin": "^0.2.0"
     },
     "autoload": {
         "psr-4": {
             "winwin\\db\\tools\\": "src/"
         }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "winwin\\db\\tools\\": "tests/"
-        }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    }
 }

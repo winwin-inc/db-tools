@@ -1,14 +1,12 @@
 <?php
 namespace winwin\db\tools\commands;
 
+use Doctrine\DBAL\Connection;
+use Dotenv\Dotenv;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
-use Dotenv\Dotenv;
 use winwin\db\tools\Db;
-use PDO;
 
 /**
  *
@@ -29,12 +27,12 @@ use PDO;
  */
 abstract class BaseCommand extends Command
 {
-    const DEFAULT_HOST = '127.0.0.1';
-    const DEFAULT_PORT = 3306;
-    const DEFAULT_CHARSET = 'utf8';
+    public const DEFAULT_HOST = '127.0.0.1';
+    public const DEFAULT_PORT = 3306;
+    public const DEFAULT_CHARSET = 'utf8';
     
     /**
-     * @var \Doctrine\DBAL\Driver\Connection
+     * @var Connection
      */
     private $connection;
 
@@ -43,14 +41,14 @@ abstract class BaseCommand extends Command
      */
     private $envLoaded;
     
-    protected function configure()
+    protected function configure(): void
     {
         $this->addOption('connection', '-c', InputOption::VALUE_REQUIRED, "Connection dsn");
         $this->addOption('env', '-e', InputOption::VALUE_REQUIRED, 'Environment file');
         $this->addOption('env-prefix', null, InputOption::VALUE_REQUIRED, 'Environment name prefix');
     }
 
-    protected function getEnv($name, $default = null)
+    protected function getEnv(string $name, ?string $default = null): ?string
     {
         if (array_key_exists($name, $_ENV)) {
             return $_ENV[$name];
@@ -62,7 +60,7 @@ abstract class BaseCommand extends Command
         }
     }
 
-    protected function loadEnv(InputInterface $input)
+    protected function loadEnv(InputInterface $input): void
     {
         if ($this->envLoaded) {
             return;
@@ -73,9 +71,9 @@ abstract class BaseCommand extends Command
         }
         if ($envFile) {
             if (is_file($envFile)) {
-                (new Dotenv(dirname($envFile), basename($envFile)))->load();
+                Dotenv::createImmutable(dirname($envFile), basename($envFile))->load();
             } elseif (is_dir($envFile)) {
-                (new Dotenv($envFile))->load();
+                Dotenv::createImmutable($envFile)->safeLoad();
             } else {
                 throw new \RuntimeException("Cannot load env: file $envFile does not exist");
             }
@@ -83,7 +81,7 @@ abstract class BaseCommand extends Command
         $this->envLoaded = true;
     }
 
-    protected function getDsnFromEnv($prefix)
+    protected function getDsnFromEnv(?string $prefix): array
     {
         $dsn = [];
         $dsn['driver'] = strtolower($this->getEnv($prefix.'DB_DRIVER', 'mysql'));
@@ -92,16 +90,16 @@ abstract class BaseCommand extends Command
         $dsn['dbname'] = $this->getEnv($prefix.'DB_DATABASE', $this->getEnv($prefix.'DB_NAME'));
         if ($dsn['driver'] === 'mysql') {
             $dsn['host'] = $this->getEnv('MYSQL_PORT_3306_TCP_ADDR', $this->getEnv($prefix.'DB_HOST', self::DEFAULT_HOST));
-            $dsn['port'] = $this->getEnv('MYSQL_PORT_3306_TCP_PORT', $this->getEnv($prefix.'DB_PORT', self::DEFAULT_PORT));
+            $dsn['port'] = (int) $this->getEnv('MYSQL_PORT_3306_TCP_PORT', $this->getEnv($prefix.'DB_PORT', (string) self::DEFAULT_PORT));
             $dsn['charset'] = $this->getEnv($prefix.'DB_CHARSET', self::DEFAULT_CHARSET);
             $dsn['unix_socket'] = $this->getEnv($prefix.'DB_SOCKET');
         }
         return $dsn;
     }
     
-    protected function getConnection(InputInterface $input)
+    protected function getConnection(InputInterface $input): Connection
     {
-        if ($this->connection) {
+        if ($this->connection !== null) {
             return $this->connection;
         }
         $dsn = $input->getOption('connection');

@@ -16,7 +16,7 @@ class Table
     private static $COLUMN_DEFAULTS;
 
     /**
-     * @var \Doctrine\DBAL\Schema\Table 
+     * @var DoctrineTable
      */
     private $table;
     
@@ -28,7 +28,7 @@ class Table
     /**
      * @return DoctrineTable
      */
-    public function getTable()
+    public function getTable(): DoctrineTable
     {
         return $this->table;
     }
@@ -38,7 +38,7 @@ class Table
      * 
      * @param DoctrineTable $table
      * @param array $definitions
-     * @return static
+     * @return self
      */
     public static function fromArray(DoctrineTable $table, array $definitions)
     {
@@ -69,7 +69,7 @@ class Table
         return new self($table);
     }
     
-    public function toArray()
+    public function toArray(): array
     {
         $table = $this->table;
         $columns = [];
@@ -96,7 +96,7 @@ class Table
         ]);
     }
 
-    private function stringifyColumn(Column $column)
+    private function stringifyColumn(Column $column): string
     {
         $defaults = self::getColumnDefaults();
         $info = $column->toArray();
@@ -108,7 +108,7 @@ class Table
             unset($info[$name]);
         }
         foreach (['unsigned', 'fixed', 'notnull', 'autoincrement'] as $key) {
-            if ($info[$key]) {
+            if (!empty($info[$key])) {
                 $type .= " " . $key;
             }
             unset($info[$key]);
@@ -128,9 +128,9 @@ class Table
         }
     }
 
-    private static function getColumnDefaults()
+    private static function getColumnDefaults(): array
     {
-        if (!self::$COLUMN_DEFAULTS) {
+        if (null === self::$COLUMN_DEFAULTS) {
             $defaults = [];
             $class = new ReflectionClass(Column::class);
             foreach ($class->getDefaultProperties() as $name => $val) {
@@ -141,7 +141,7 @@ class Table
         return self::$COLUMN_DEFAULTS;
     }
 
-    private function stringifyIndex(Index $index)
+    private function stringifyIndex(Index $index): string
     {
         if ($index->isPrimary()) {
             $def = 'PRIMARY KEY(';
@@ -152,7 +152,7 @@ class Table
         }
         $options = $index->getOptions();
         $length = isset($options['length']) ? $options['length'] : [];
-        $def .= implode(',', array_map(function ($name) use ($length) {
+        $def .= implode(',', array_map(function ($name) use ($length): string {
             if (isset($length[$name])) {
                 return $name . '('.$length[$name] . ')';
             } else {
@@ -172,7 +172,7 @@ class Table
         return $def . (empty($others) ? '' : ' ' . self::jsonEncode($others));
     }
 
-    private function stringifyForeignKey(ForeignKeyConstraint $foreignKey)
+    private function stringifyForeignKey(ForeignKeyConstraint $foreignKey): string
     {
         $def = sprintf(
             '(%s) REFERENCES %s (%s)',
@@ -184,7 +184,7 @@ class Table
         return $def . (empty($options) ? '' : ' ' . self::jsonEncode($options));
     }
 
-    private static function parseColumn($columnDef)
+    private static function parseColumn(string $columnDef): array
     {
         $original = $columnDef;
         $columnDef = trim($columnDef);
@@ -224,7 +224,7 @@ class Table
         return [$type, $options];
     }
 
-    private static function parseIndex($indexDef)
+    private static function parseIndex(string $indexDef): array
     {
         $def = $indexDef;
         $indexDef = trim($indexDef);
@@ -268,7 +268,10 @@ class Table
         return $index;
     }
 
-    private static function jsonEncode($data)
+    /**
+     * @param array $data
+     */
+    private static function jsonEncode($data): string
     {
         return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
