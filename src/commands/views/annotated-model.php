@@ -48,14 +48,10 @@ class <?= $className ?>
     /**
      * @param <?= $column['varType'] ?>|null $<?= $column['varName'] ?>
 
-     * 
-     * @return static
      */
-    public function set<?= $column['methodName'] ?>(?<?= $column['varType'] ?> $<?= $column['varName'] ?>)
+    public function set<?= $column['methodName'] ?>(?<?= $column['varType'] ?> $<?= $column['varName'] ?>): void
     {
         $this-><?= $column['varName'] ?> = $<?= $column['varName'] ?>;
-        
-        return $this;
     }
 
 <?php endforeach ?>

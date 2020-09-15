@@ -32,5 +32,6 @@
         "psr-4": {
             "winwin\\db\\tools\\": "src/"
         }
-    }
+    },
+    "bin": "bin/db"
 }
