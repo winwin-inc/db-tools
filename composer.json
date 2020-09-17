@@ -14,10 +14,12 @@
     ],
     "require": {
         "php": "^7.2",
-        "ext-pdo": "*",
         "ext-json": "*",
+        "ext-pdo": "*",
         "doctrine/dbal": "^2.5",
         "jdorn/sql-formatter": "^1.2",
+        "kuiper/kuiper": "^0.5",
+        "roave/better-reflection": "^4.3",
         "symfony/console": "^5.1",
         "symfony/yaml": "^5.1",
         "vlucas/phpdotenv": "^5.1"
