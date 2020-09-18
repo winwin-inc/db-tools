@@ -17,41 +17,41 @@ class <?= $className; ?>
 {
 <?php foreach ($columns as $column) : ?>
     /**
-<?php if ($column['isAutoincrement']) : ?>
+<?php /** @var \winwin\db\tools\generator\Column $column */ if ($column->isAutoincrement()) : ?>
      * @Id
      * @GeneratedValue
 <?php endif; ?>
-<?php if ($column['isCreatedAt']) : ?>
+<?php if ($column->isCreatedAt()) : ?>
      * @CreationTimestamp
 <?php endif; ?>
-<?php if ($column['isUpdatedAt']) : ?>
+<?php if ($column->isUpdatedAt()) : ?>
      * @UpdateTimestamp
 <?php endif; ?>
-<?php if ('date' === $column['dbType']): ?>
+<?php if ('date' === $column->getDbType()): ?>
      * @Convert(DateConverter::class)
 <?php endif; ?>
-     * @var <?= $column['varType']; ?>|null
+     * @var <?= $column->getVarType(); ?>|null
      */
-    private $<?= $column['varName']; ?>;
+    private $<?= $column->getVarName(); ?>;
 
 <?php endforeach; ?>
 <?php foreach ($columns as $column) : ?>
     /**
-     * @return <?= $column['varType']; ?>|null
+     * @return <?= $column->getVarType(); ?>|null
      */
-    public function get<?= $column['methodName']; ?>(): ?<?= $column['varType']; ?>
+    public function get<?= $column->getMethodName(); ?>(): ?<?= $column->getVarType(); ?>
 
     {
-        return $this-><?= $column['varName']; ?>;
+        return $this-><?= $column->getVarName(); ?>;
     }
-    
+
     /**
-     * @param <?= $column['varType']; ?>|null $<?= $column['varName']; ?>
+     * @param <?= $column->getVarType(); ?>|null $<?= $column->getVarName(); ?>
 
      */
-    public function set<?= $column['methodName']; ?>(?<?= $column['varType']; ?> $<?= $column['varName']; ?>): void
+    public function set<?= $column->getMethodName(); ?>(?<?= $column->getVarType(); ?> $<?= $column->getVarName(); ?>): void
     {
-        $this-><?= $column['varName']; ?> = $<?= $column['varName']; ?>;
+        $this-><?= $column->getVarName(); ?> = $<?= $column->getVarName(); ?>;
     }
 
 <?php endforeach; ?>

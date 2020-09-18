@@ -28,11 +28,17 @@
         "phpstan/extension-installer": "^1.0",
         "phpstan/phpstan": "^0.12.34",
         "phpstan/phpstan-strict-rules": "^0.12.4",
+        "phpunit/phpunit": "^7.0",
         "winwin/composer-phpcs-plugin": "^0.2.0"
     },
     "autoload": {
         "psr-4": {
             "winwin\\db\\tools\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "winwin\\db\\tools\\": "tests/"
         }
     },
     "bin": "bin/db"
