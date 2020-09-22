@@ -6,6 +6,8 @@ namespace winwin\db\tools\generator;
 
 use Composer\Autoload\ClassLoader;
 use Doctrine\DBAL\Connection;
+use kuiper\annotations\AnnotationReader;
+use kuiper\db\annotation\Transient;
 use function kuiper\helper\env;
 use kuiper\web\view\PhpView;
 use PhpParser\Node;
@@ -169,27 +171,30 @@ class EntityGenerator
     {
         $propertyAlias = $this->getPropertyAlias();
         $columnAlias = array_flip($propertyAlias);
+        $annotationReader = AnnotationReader::getInstance();
 
         $class = ReflectionClass::createFromName($this->getClassName());
+        $reflectionClass = new \ReflectionClass($this->getClassName());
         $astLocator = (new BetterReflection())->astLocator();
         $code = $this->generateCode();
         $reflector = new ClassReflector(new StringSourceLocator($code, $astLocator));
-        $reflectionClass = $reflector->reflect($this->getClassName());
+        $generatedClass = $reflector->reflect($this->getClassName());
         foreach ($class->getProperties() as $property) {
             $name = $propertyAlias[$property->getName()];
-            if (!$reflectionClass->hasProperty($name)) {
+            if (!$generatedClass->hasProperty($name)
+                && null === $annotationReader->getPropertyAnnotation($reflectionClass->getProperty($property->getName()), Transient::class)) {
                 $class->removeProperty($property->getName());
                 $class->removeMethod('get'.lcfirst($property->getName()));
                 $class->removeMethod('set'.lcfirst($property->getName()));
             }
         }
-        foreach ($reflectionClass->getProperties() as $property) {
+        foreach ($generatedClass->getProperties() as $property) {
             /** @var ReflectionProperty $property */
             $name = $columnAlias[$property->getName()] ?? $property->getName();
             if (!$class->hasProperty($name)) {
                 $class->getAst()->stmts[] = $property->getAst();
-                $class->getAst()->stmts[] = $reflectionClass->getMethod('get'.ucfirst($name))->getAst();
-                $class->getAst()->stmts[] = $reflectionClass->getMethod('set'.ucfirst($name))->getAst();
+                $class->getAst()->stmts[] = $generatedClass->getMethod('get'.ucfirst($name))->getAst();
+                $class->getAst()->stmts[] = $generatedClass->getMethod('set'.ucfirst($name))->getAst();
             }
         }
         $node = $class->getAst();
