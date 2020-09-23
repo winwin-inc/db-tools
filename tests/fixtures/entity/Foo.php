@@ -7,7 +7,9 @@ namespace winwin\db\tools\fixtures\entity;
 use kuiper\db\annotation\CreationTimestamp;
 use kuiper\db\annotation\GeneratedValue;
 use kuiper\db\annotation\Id;
+use kuiper\db\annotation\Transient;
 use kuiper\db\annotation\UpdateTimestamp;
+use winwin\db\tools\fixtures\Bar;
 
 class Foo
 {
@@ -36,6 +38,13 @@ class Foo
      * @var \DateTime|null
      */
     private $createTime;
+
+    /**
+     * @Transient()
+     *
+     * @var Bar
+     */
+    protected $bar;
 
     /**
      * @return int|null
@@ -99,5 +108,21 @@ class Foo
     public function setUpdateTime(?\DateTime $updateTime): void
     {
         $this->updateTime = $updateTime;
+    }
+
+    /**
+     * @return Bar
+     */
+    public function getBar(): Bar
+    {
+        return $this->bar;
+    }
+
+    /**
+     * @param Bar $bar
+     */
+    public function setBar(Bar $bar): void
+    {
+        $this->bar = $bar;
     }
 }

@@ -39,16 +39,18 @@ CREATE TABLE foo(
         return new EntityGenerator($conn, $loader, $ns.$namespace, 'foo');
     }
 
-    public function testGenerateClassExist()
+    public function testGenerateClassNotExist()
     {
         $code = $this->createGenerator('dao')->generate();
         $this->assertEquals($code, file_get_contents(__DIR__.'/../fixtures/Foo.php'));
     }
 
-    public function testGenerateClassNotExist()
+    public function testGenerateClassExist()
     {
         $code = $this->createGenerator('entity')->generate();
-        $this->assertEquals($code, file_get_contents(__DIR__.'/../fixtures/Foo.modified.php'));
+        $file = __DIR__.'/../fixtures/Foo.modified.php';
+        // file_put_contents($file, $code);
+        $this->assertEquals($code, file_get_contents($file));
     }
 
     public function testGenerateRepository()

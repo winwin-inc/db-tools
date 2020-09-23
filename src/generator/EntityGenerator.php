@@ -58,6 +58,11 @@ class EntityGenerator
     private $className;
 
     /**
+     * @var array<string,string>
+     */
+    private $importNames = [];
+
+    /**
      * @var PhpView
      */
     private $view;
@@ -142,6 +147,17 @@ class EntityGenerator
 
             public function enterNode(Node $node)
             {
+                if ($node instanceof Node\Stmt\Namespace_) {
+                    foreach ($node->stmts as $stmt) {
+                        if ($stmt instanceof Node\Stmt\Use_
+                            && Node\Stmt\Use_::TYPE_NORMAL === $stmt->type) {
+                            foreach ($stmt->uses as $use) {
+                                $alias = null === $use->alias ? $use->name->getLast() : $use->alias->toString();
+                                $this->generator->addImport($alias, $use->name->toCodeString());
+                            }
+                        }
+                    }
+                }
                 if ($node instanceof Node\Stmt\Class_
                     && $node->name->toString() === $this->generator->getClassShortName()) {
                     return $this->generator->replaceWithImport($this->generator->getClassAst());
@@ -210,6 +226,10 @@ class EntityGenerator
 
     public function toRelativeName(Node\Name\FullyQualified $node): Node\Name
     {
+        $key = array_search(ltrim($node->toCodeString(), '\\'), $this->importNames, true);
+        if (false !== $key) {
+            return new Node\Name($key, $node->getAttributes());
+        }
         $namespace = $node->slice(0, -1);
         if (null !== $namespace && ltrim($namespace->toCodeString(), '\\') === $this->namespace) {
             return new Node\Name($node->getLast(), $node->getAttributes());
@@ -304,9 +324,6 @@ class EntityGenerator
     }
 
     /**
-     * @param Connection $db
-     * @param string     $table
-     *
      * @return Column[]
      *
      * @throws \Doctrine\DBAL\DBALException
@@ -322,5 +339,10 @@ class EntityGenerator
         }
 
         return $columns;
+    }
+
+    public function addImport(string $alias, string $className): void
+    {
+        $this->importNames[$alias] = $className;
     }
 }
