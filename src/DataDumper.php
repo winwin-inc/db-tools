@@ -123,6 +123,7 @@ class DataDumper
             case 'json':
                 return json_decode(file_get_contents($file), true);
             case 'yaml':
+            case 'yml':
                 return Yaml::parse(file_get_contents($file));
             case 'php':
                 /* @noinspection PhpIncludeInspection */

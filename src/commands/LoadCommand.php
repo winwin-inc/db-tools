@@ -17,7 +17,8 @@ class LoadCommand extends BaseCommand
         $this->setName("load")
             ->setDescription("Load data to database table")
             ->addOption('--table', null, InputOption::VALUE_REQUIRED, "Table to load")
-            ->addOption('--format', '-f', InputOption::VALUE_REQUIRED, "Input data format, support json|yaml|php")
+            ->addOption('--delimiter', '-d', InputOption::VALUE_REQUIRED, "Csv delimiter, default tab", "\t")
+            ->addOption('--format', '-f', InputOption::VALUE_REQUIRED, "Input data format, support json|yaml|php|csv")
             ->addOption('--truncate', '-t', InputOption::VALUE_NONE, "Truncate table before load data")
             ->addArgument('file', InputArgument::OPTIONAL, "Data input file, default read from stdin");
     }
@@ -34,7 +35,7 @@ class LoadCommand extends BaseCommand
                 $format = 'yaml';
             }
         }
-        $dataset = DataDumper::loadFile($file, $format);
+        $dataset = $this->loadFile($file, $format, $input->getOption('delimiter'));
         if ($table) {
             $dataset = [$table => $dataset];
         }
@@ -45,7 +46,7 @@ class LoadCommand extends BaseCommand
                     continue;
                 }
                 $columns = $db->getSchemaManager()->listTableColumns($tableName);
-                $fields = array_intersect(array_keys($rows[0]), array_map(function(Column $column): string {
+                $fields = array_intersect(array_keys($rows[0]), array_map(function (Column $column): string {
                     return $column->getName();
                 }, $columns));
                 if ($truncate) {
@@ -85,5 +86,28 @@ class LoadCommand extends BaseCommand
             ));
         }
         return 0;
+
+    }
+
+    private function loadFile(string $file, string $format, string $delimiter): array
+    {
+        if (in_array($format, ['json', 'php', 'yaml', 'yml'])) {
+            return DataDumper::loadFile($file, $format);
+        }
+        if ($format === 'csv') {
+            $fp = fopen($file, 'rb');
+            $columns = fgetcsv($fp, 0, $delimiter);
+            $rows = [];
+            $ln = 1;
+            while ($row = fgetcsv($fp, 0, $delimiter)) {
+                $ln++;
+                if (count($row) !== count($columns)) {
+                    throw new \InvalidArgumentException("$file line $ln column count not match, expected " . count($columns) . ' columns');
+                }
+                $rows[] = array_combine($columns, $row);
+            }
+            return $rows;
+        }
+        throw new \InvalidArgumentException("Unknown format $format");
     }
 }

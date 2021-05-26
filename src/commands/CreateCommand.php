@@ -59,9 +59,9 @@ class CreateCommand extends BaseCommand
             return 0;
         }
         $sqls = [
-            sprintf("CREATE database IF NOT EXISTS $dbname%s;", $charset ? ' DEFAULT CHARACTER SET utf8' : ''),
-            "GRANT ALL ON $dbname.* TO $username@'%' IDENTIFIED BY '$password';",
-            "GRANT ALL ON $dbname.* TO $username@'localhost' IDENTIFIED BY '$password';",
+            sprintf("CREATE database IF NOT EXISTS $dbname%s;", $charset ? ' DEFAULT CHARACTER SET ' . $charset : ''),
+            "CREATE USER $username IDENTIFIED WITH mysql_native_password BY '$password';",
+            "GRANT ALL ON $dbname.* TO $username@'%';",
             "FLUSH PRIVILEGES;"
         ];
         if ($input->isInteractive()) {
