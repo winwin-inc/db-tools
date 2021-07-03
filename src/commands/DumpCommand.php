@@ -36,6 +36,8 @@ class DumpCommand extends BaseCommand
             } else {
                 $sql = "SELECT * FROM {$table}";
             }
+        } elseif (strpos($sql, 'file://') === 0) {
+            $sql = file_get_contents($sql);
         }
         if (!preg_match("/ limit \d+/i", $sql)) {
             $limit = (int)$input->getOption('limit');
