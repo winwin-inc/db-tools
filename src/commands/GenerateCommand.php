@@ -62,6 +62,8 @@ class GenerateCommand extends BaseCommand
                     ?? $this->getRootNamespace($projectPath).'domain\\repository';
                 $repositoryFile = $this->getFile($loader, $repositoryNs.'\\'.$generator->getClassShortName().'Repository');
                 file_put_contents($repositoryFile, $generator->generateRepository($repositoryNs));
+                $repositoryFile = $this->getFile($loader, $repositoryNs.'\\'.$generator->getClassShortName().'RepositoryImpl');
+                file_put_contents($repositoryFile, $generator->generateRepository($repositoryNs, true));
             }
             file_put_contents($outputFile, $code);
             $output->writeln("<info>Write to $outputFile</>");

@@ -174,12 +174,13 @@ class EntityGenerator
         return $printer->prettyPrintFile($traverser->traverse($stmts));
     }
 
-    public function generateRepository(string $repositoryNamespace): string
+    public function generateRepository(string $repositoryNamespace, bool $impl = false): string
     {
-        return $this->view->render('repository', [
+        return $this->view->render($impl ? 'repository-impl' : 'repository', [
             'namespace' => $repositoryNamespace,
             'entityNamespace' => $this->namespace,
             'entityClass' => $this->getClassShortName(),
+            'varName' => lcfirst($this->getClassShortName()),
         ]);
     }
 
