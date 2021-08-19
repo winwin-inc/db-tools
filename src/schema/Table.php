@@ -1,10 +1,13 @@
 <?php
+
+declare(strict_types=1);
+
 namespace winwin\db\tools\schema;
 
-use Doctrine\DBAL\Schema\Table as DoctrineTable;
 use Doctrine\DBAL\Schema\Column;
-use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
+use Doctrine\DBAL\Schema\Index;
+use Doctrine\DBAL\Schema\Table as DoctrineTable;
 use InvalidArgumentException;
 use ReflectionClass;
 
@@ -19,7 +22,7 @@ class Table
      * @var DoctrineTable
      */
     private $table;
-    
+
     public function __construct(DoctrineTable $table)
     {
         $this->table = $table;
@@ -34,27 +37,32 @@ class Table
     }
 
     /**
-     * Constructs table instance from data
-     * 
+     * Constructs table instance from data.
+     *
      * @param DoctrineTable $table
-     * @param array $definitions
+     * @param array         $definitions
+     *
      * @return self
      */
     public static function fromArray(DoctrineTable $table, array $definitions)
     {
         if (empty($definitions['columns'])) {
-            throw new InvalidArgumentException("columns is required");
+            throw new InvalidArgumentException('columns is required');
         }
         foreach ($definitions['columns'] as $name => $columnDef) {
-            list ($type, $options) = self::parseColumn($columnDef);
+            try {
+                list($type, $options) = self::parseColumn($columnDef);
+            } catch (\InvalidArgumentException $e) {
+                throw new \InvalidArgumentException("table {$table->getName()} column $name is invalid");
+            }
             $table->addColumn($name, $type, $options);
         }
         if (isset($definitions['indexes'])) {
             foreach ($definitions['indexes'] as $name => $indexDef) {
                 $index = self::parseIndex($indexDef);
-                if ($index['type'] === 'PRIMARY') {
+                if ('PRIMARY' === $index['type']) {
                     $table->setPrimaryKey($index['columns']);
-                } elseif ($index['type'] === 'UNIQUE') {
+                } elseif ('UNIQUE' === $index['type']) {
                     $table->addUniqueIndex($index['columns'], $name, $index['options']);
                 } else {
                     $table->addIndex($index['columns'], $name, $index['flags'], $index['options']);
@@ -66,9 +74,10 @@ class Table
                 $table->addOption($name, $val);
             }
         }
+
         return new self($table);
     }
-    
+
     public function toArray(): array
     {
         $table = $this->table;
@@ -88,11 +97,12 @@ class Table
         foreach ($table->getForeignKeys() as $foreignKey) {
             $foreignKeys[] = $this->stringifyForeignKey($foreignKey);
         }
+
         return array_filter([
             'columns' => $columns,
             'indexes' => $indexes,
             'foreignKeys' => $foreignKeys,
-            'options' => $table->getOptions()
+            'options' => $table->getOptions(),
         ]);
     }
 
@@ -102,18 +112,18 @@ class Table
         $info = $column->toArray();
         $type = $column->getType()->getName();
         if (isset($info['length'])) {
-            $type .= '(' . $info['length'] . ')';
+            $type .= '('.$info['length'].')';
         }
         foreach (['name', 'type', 'length'] as $name) {
             unset($info[$name]);
         }
         foreach (['unsigned', 'fixed', 'notnull', 'autoincrement'] as $key) {
             if (!empty($info[$key])) {
-                $type .= " " . $key;
+                $type .= ' '.$key;
             }
             unset($info[$key]);
         }
-        if (isset($info['collation']) && $info['collation'] === 'utf8_general_ci') {
+        if (isset($info['collation']) && 'utf8_general_ci' === $info['collation']) {
             unset($info['collation']);
         }
         foreach ($info as $name => $val) {
@@ -122,7 +132,7 @@ class Table
             }
         }
         if (!empty($info)) {
-            return $type . ' ' . self::jsonEncode($info);
+            return $type.' '.self::jsonEncode($info);
         } else {
             return $type;
         }
@@ -138,6 +148,7 @@ class Table
             }
             self::$COLUMN_DEFAULTS = $defaults;
         }
+
         return self::$COLUMN_DEFAULTS;
     }
 
@@ -154,7 +165,7 @@ class Table
         $length = isset($options['length']) ? $options['length'] : [];
         $def .= implode(',', array_map(function ($name) use ($length): string {
             if (isset($length[$name])) {
-                return $name . '('.$length[$name] . ')';
+                return $name.'('.$length[$name].')';
             } else {
                 return $name;
             }
@@ -169,7 +180,8 @@ class Table
         if (!empty($flags)) {
             $others['flags'] = $flags;
         }
-        return $def . (empty($others) ? '' : ' ' . self::jsonEncode($others));
+
+        return $def.(empty($others) ? '' : ' '.self::jsonEncode($others));
     }
 
     private function stringifyForeignKey(ForeignKeyConstraint $foreignKey): string
@@ -181,7 +193,8 @@ class Table
             $foreignColumns = implode(',', $foreignKey->getForeignColumns())
         );
         $options = $foreignKey->getOptions();
-        return $def . (empty($options) ? '' : ' ' . self::jsonEncode($options));
+
+        return $def.(empty($options) ? '' : ' '.self::jsonEncode($options));
     }
 
     private static function parseColumn(string $columnDef): array
@@ -198,14 +211,13 @@ class Table
         if (preg_match('/^\(\s*(\d+)\s*\)/', $columnDef, $matches)) {
             $options['length'] = (int) $matches[1];
         }
-        if (!empty($columnDef) && $columnDef[0] == '{') {
+        if (!empty($columnDef) && '{' == $columnDef[0]) {
             $options = array_merge($options, json_decode($columnDef, true));
         } else {
             if (($pos = strpos($columnDef, ' {')) !== false) {
-                $data = json_decode(substr($columnDef, $pos+1), true);
+                $data = json_decode(substr($columnDef, $pos + 1), true);
                 if (JSON_ERROR_NONE !== json_last_error()) {
-                    throw new \InvalidArgumentException(
-                        'json_decode error: ' . json_last_error_msg() . ' when parse ' . $original);
+                    throw new \InvalidArgumentException('json_decode error: '.json_last_error_msg().' when parse '.$original);
                 }
                 $options = array_merge($options, $data);
                 $columnDef = substr($columnDef, 0, $pos);
@@ -221,6 +233,7 @@ class Table
                 $options[$key] = false;
             }
         }
+
         return [$type, $options];
     }
 
@@ -244,7 +257,7 @@ class Table
             throw new InvalidArgumentException("invalid index definition '{$indexDef}'");
         }
         if (($pos = strpos($indexDef, ' {')) !== false) {
-            $options = json_decode(substr($indexDef, $pos+1), true);
+            $options = json_decode(substr($indexDef, $pos + 1), true);
             if (isset($options['options'])) {
                 $index['options'] = $options['options'];
             }
@@ -258,13 +271,14 @@ class Table
             foreach (preg_split('/\s*,\s*/', $matches[1]) as $column) {
                 if (preg_match('/\(\s*(\d+)\s*\)$/', $column, $matches)) {
                     $column = trim(substr($column, 0, -strlen($matches[0])));
-                    $index['options']['length'][$column] = (int)$matches[1];
+                    $index['options']['length'][$column] = (int) $matches[1];
                 }
                 $index['columns'][] = $column;
             }
         } else {
             throw new InvalidArgumentException("invalid index definition '{$def}'");
         }
+
         return $index;
     }
 

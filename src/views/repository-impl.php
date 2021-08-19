@@ -1,4 +1,5 @@
-<?php echo '<?php'; ?>
+<?php declare(strict_types=1);
+echo '<?php'; ?>
 
 <?php if ($namespace) { ?>
 
@@ -18,7 +19,7 @@ use <?php echo $entityNamespace; ?>\<?php echo $entityClass; ?>;
  * @method <?php echo $entityClass; ?>|null findByNaturalId(<?php echo $entityClass; ?> $example)
  * @method <?php echo $entityClass; ?>[] findAllByNaturalId(array $examples): array
  * @method <?php echo $entityClass; ?>[] findAllById(array $ids): array
- * @method <?php echo $entityClass; ?>[] findAllBy(Criteria $criteria): array
+ * @method <?php echo $entityClass; ?>[] findAllBy($criteria): array
  */
 class <?php echo $entityClass; ?>RepositoryImpl extends AbstractCrudRepository implements <?php echo $entityClass; ?>Repository
 {

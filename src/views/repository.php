@@ -1,4 +1,5 @@
-<?php echo '<?php'; ?>
+<?php declare(strict_types=1);
+echo '<?php'; ?>
 
 <?php if ($namespace) { ?>
 
@@ -16,11 +17,11 @@ use <?php echo $entityNamespace; ?>\<?php echo $entityClass; ?>;
  * @method bool existsById($id)
  * @method <?php echo $entityClass; ?>[] findAllById(array $ids): array
  * @method void insert(<?php echo $entityClass; ?> $<?php echo $varName; ?>)
- * @method void batchInsert(array $entities)
+ * @method array batchInsert(array $entities)
  * @method void update(<?php echo $entityClass; ?> $<?php echo $varName; ?>)
- * @method void batchUpdate(array $entities)
+ * @method array batchUpdate(array $entities)
  * @method void save(<?php echo $entityClass; ?> $<?php echo $varName; ?>)
- * @method void batchSave(array $entities)
+ * @method array batchSave(array $entities)
  * @method void delete(<?php echo $entityClass; ?> $<?php echo $varName; ?>)
  * @method void deleteById($id)
  * @method void deleteAllById(array $ids)
