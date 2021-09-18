@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace winwin\db\tools\commands;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -14,15 +17,15 @@ class LoadCommand extends BaseCommand
     protected function configure(): void
     {
         parent::configure();
-        $this->setName("load")
-            ->setDescription("Load data to database table")
-            ->addOption('--table', null, InputOption::VALUE_REQUIRED, "Table to load")
-            ->addOption('--delimiter', '-d', InputOption::VALUE_REQUIRED, "Csv delimiter, default tab", "\t")
-            ->addOption('--format', '-f', InputOption::VALUE_REQUIRED, "Input data format, support json|yaml|php|csv")
-            ->addOption('--truncate', '-t', InputOption::VALUE_NONE, "Truncate table before load data")
-            ->addArgument('file', InputArgument::OPTIONAL, "Data input file, default read from stdin");
+        $this->setName('load')
+            ->setDescription('Load data to database table')
+            ->addOption('--table', null, InputOption::VALUE_REQUIRED, 'Table to load')
+            ->addOption('--delimiter', '-d', InputOption::VALUE_REQUIRED, 'Csv delimiter, default tab', "\t")
+            ->addOption('--format', '-f', InputOption::VALUE_REQUIRED, 'Input data format, support json|yaml|php|csv', 'yaml')
+            ->addOption('--truncate', '-t', InputOption::VALUE_NONE, 'Truncate table before load data')
+            ->addArgument('file', InputArgument::OPTIONAL, 'Data input file, default read from stdin');
     }
- 
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $truncate = $input->getOption('truncate');
@@ -30,7 +33,7 @@ class LoadCommand extends BaseCommand
         $file = $input->getArgument('file');
         $table = $input->getOption('table');
         if (empty($file)) {
-            $file = "php://stdin";
+            $file = 'php://stdin';
             if (empty($format)) {
                 $format = 'yaml';
             }
@@ -70,42 +73,43 @@ class LoadCommand extends BaseCommand
                     $stmt = $db->prepare($sql);
                     $stmt->execute($bindValues);
                 }
-                $output->writeln(sprintf("<info>Load %d records to table %s</>", count($rows), $tableName));
+                $output->writeln(sprintf('<info>Load %d records to table %s</>', count($rows), $tableName));
             }
         } catch (UniqueConstraintViolationException $e) {
-            if (isset($_SERVER["argv"])) {
-                $argv = $_SERVER["argv"];
-                array_splice($argv, 2, 0, "-t");
-                $example = "For example: \n" . implode(" ", $argv) . "\n";
+            if (isset($_SERVER['argv'])) {
+                $argv = $_SERVER['argv'];
+                array_splice($argv, 2, 0, '-t');
+                $example = "For example: \n".implode(' ', $argv)."\n";
             } else {
-                $example = "";
+                $example = '';
             }
             $output->writeln(sprintf(
                 "<error>Data integrity violation occur. Use -t to truncate table before load data.\n%s</>",
                 $example
             ));
         }
-        return 0;
 
+        return 0;
     }
 
     private function loadFile(string $file, string $format, string $delimiter): array
     {
-        if (in_array($format, ['json', 'php', 'yaml', 'yml'])) {
+        if (in_array($format, ['json', 'php', 'yaml', 'yml'], true)) {
             return DataDumper::loadFile($file, $format);
         }
-        if ($format === 'csv') {
+        if ('csv' === $format) {
             $fp = fopen($file, 'rb');
             $columns = fgetcsv($fp, 0, $delimiter);
             $rows = [];
             $ln = 1;
             while ($row = fgetcsv($fp, 0, $delimiter)) {
-                $ln++;
+                ++$ln;
                 if (count($row) !== count($columns)) {
-                    throw new \InvalidArgumentException("$file line $ln column count not match, expected " . count($columns) . ' columns');
+                    throw new \InvalidArgumentException("$file line $ln column count not match, expected ".count($columns).' columns');
                 }
                 $rows[] = array_combine($columns, $row);
             }
+
             return $rows;
         }
         throw new \InvalidArgumentException("Unknown format $format");

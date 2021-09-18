@@ -60,7 +60,7 @@ class Column
     {
         $type = $this->getType($this->column->getType(), true);
 
-        return  '\\' === $type[0] ? $type.' ' : '';
+        return '\\' === $type[0] ? $type.' ' : '';
     }
 
     public function getDbType(): string
@@ -90,9 +90,9 @@ class Column
         ];
         if ($isAnnotationEnabled) {
             $typeMap = array_merge($typeMap, [
-                'datetime' => '\DateTime',
-                'time' => '\DateTime',
-                'date' => '\DateTime',
+                'datetime' => '\DateTimeInterface',
+                'time' => '\DateTimeInterface',
+                'date' => '\DateTimeInterface',
             ]);
         }
         $typeName = $type->getName();
