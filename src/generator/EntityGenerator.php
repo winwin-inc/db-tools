@@ -9,7 +9,6 @@ use Doctrine\DBAL\Connection;
 use kuiper\annotations\AnnotationReader;
 use kuiper\db\annotation\Transient;
 use function kuiper\helper\env;
-use kuiper\web\view\PhpView;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
@@ -63,11 +62,6 @@ class EntityGenerator
     private $importNames = [];
 
     /**
-     * @var PhpView
-     */
-    private $view;
-
-    /**
      * EntityGenerator constructor.
      *
      * @param Connection  $connection
@@ -80,7 +74,6 @@ class EntityGenerator
         $this->loader = $loader;
         $this->namespace = trim($namespace, '\\');
         $this->table = $table;
-        $this->view = new PhpView(__DIR__.'/../views');
     }
 
     /**
@@ -176,12 +169,22 @@ class EntityGenerator
 
     public function generateRepository(string $repositoryNamespace, bool $impl = false): string
     {
-        return $this->view->render($impl ? 'repository-impl' : 'repository', [
+        return $this->render($impl ? 'repository-impl.php' : 'repository.php', [
             'namespace' => $repositoryNamespace,
             'entityNamespace' => $this->namespace,
             'entityClass' => $this->getClassShortName(),
             'varName' => lcfirst($this->getClassShortName()),
         ]);
+    }
+
+    private function render(string $name, array $context = []): string
+    {
+        extract($context, EXTR_SKIP);
+        ob_start();
+        /** @noinspection PhpIncludeInspection */
+        include __DIR__.'/../views/'.$name;
+
+        return ob_get_clean();
     }
 
     public function getClassAst(): Node
@@ -316,7 +319,7 @@ class EntityGenerator
 
     public function generateCode(): string
     {
-        return $this->view->render('entity', [
+        return $this->render('entity.php', [
             'className' => $this->getClassShortName(),
             'namespace' => $this->namespace,
             'table' => $this->table,

@@ -18,7 +18,7 @@
         "ext-pdo": "*",
         "doctrine/dbal": "^2.5",
         "jdorn/sql-formatter": "^1.2",
-        "kuiper/kuiper": "^0.5",
+        "kuiper/db": "^0.6",
         "roave/better-reflection": "^4.3",
         "symfony/console": "^5.1",
         "symfony/yaml": "^5.1",
