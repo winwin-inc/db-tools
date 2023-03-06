@@ -55,12 +55,12 @@ class GenerateCommand extends BaseCommand
         } else {
             $outputFile = $input->getOption('output') ?? $this->getFile($loader, $generator->getClassName());
             $file = $generator->getFile();
-            if (false === $file) {
+            $repositoryNs = $input->getOption('repository-namespace')
+                          ?? $config->repository_namespace
+                          ?? $this->getRootNamespace($projectPath).'domain\\repository';
+            $repositoryFile = $this->getFile($loader, $repositoryNs.'\\'.$generator->getClassShortName().'Repository');
+            if (false === $file || !file_exists($repositoryFile)) {
                 // 生成 repository 代码
-                $repositoryNs = $input->getOption('repository-namespace')
-                    ?? $config->repository_namespace
-                    ?? $this->getRootNamespace($projectPath).'domain\\repository';
-                $repositoryFile = $this->getFile($loader, $repositoryNs.'\\'.$generator->getClassShortName().'Repository');
                 file_put_contents($repositoryFile, $generator->generateRepository($repositoryNs));
                 $repositoryFile = $this->getFile($loader, $repositoryNs.'\\'.$generator->getClassShortName().'RepositoryImpl');
                 file_put_contents($repositoryFile, $generator->generateRepository($repositoryNs, true));
